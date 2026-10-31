@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Verkeer in beeld</title>
+  <meta name="description" content="Teken verkeerssituaties op een kruispunt of rechte weg: weggebruikers, borden, verkeerslichten en wegmarkeringen. Bewaar ze als afbeelding voor je les.">
+  <meta name="theme-color" content="#2b6a87">
+  <meta property="og:title" content="Verkeer in beeld">
+  <meta property="og:description" content="Teken verkeerssituaties voor de rijles of verkeersles.">
+  <meta property="og:image" content="icons/icon-512.png">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preload" href="fonts/lexend-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+<header>
+  <h1>Verkeer in beeld</h1>
+  <div class="seg" role="group" aria-label="Situatie">
+    <button type="button" id="sCross" class="on">Kruispunt</button>
+    <button type="button" id="sRoad">Rechte weg</button>
+  </div>
+</header>
+
+<main>
+  <aside class="palette" id="palette" aria-label="Materiaal">
+    <div class="ctrls">
+      <div><div class="mini">Komt van</div><div class="dpad" id="dpad"></div></div>
+      <div><div class="mini">Kleur</div><div class="sw" id="sw"></div></div>
+    </div>
+    <details class="sec" data-sec="veh" open><summary>Weggebruikers</summary><div class="tiles" id="t-veh"></div></details>
+    <details class="sec" data-sec="light"><summary>Verkeerslichten</summary><div class="tiles" id="t-light"></div></details>
+    <details class="sec" data-sec="sign"><summary>Verkeersborden</summary><div class="tiles" id="t-sign"></div></details>
+    <details class="sec" data-sec="mark"><summary>Wegmarkeringen</summary><div class="tiles" id="t-mark"></div></details>
+    <details class="sec" data-sec="berm"><summary>Bermen en stroken</summary><div class="tiles" id="t-berm"></div></details>
+    <details class="sec" data-sec="works"><summary>Wegenwerken</summary><div class="tiles" id="t-works"></div></details>
+    <details class="sec" data-sec="obst"><summary>Hindernis</summary><div class="tiles" id="t-obst"></div></details>
+    <details class="sec" data-sec="pers"><summary>Bevoegd persoon</summary><div class="tiles" id="t-agent"></div></details>
+    <details class="sec" data-sec="tag"><summary>Letters en hulpmiddelen</summary><div class="tiles" id="t-tag"></div></details>
+  </aside>
+
+  <div class="stage">
+    <div class="roadbar" id="crossbar">
+      <div class="grp">
+        <button class="btn" type="button" id="kType4">Kruispunt</button>
+        <button class="btn" type="button" id="kTypeT">T-kruispunt</button>
+      </div>
+      <label class="push" for="presetC">Voorbeeld
+        <select id="presetC"><option value="">Kies een situatie…</option></select>
+      </label>
+      <div class="grp" id="tSide" hidden>
+        <span class="sellabel">Zijweg komt van</span>
+        <button class="btn" type="button" data-stem="bottom">↑ onder</button>
+        <button class="btn" type="button" data-stem="top">↓ boven</button>
+        <button class="btn" type="button" data-stem="left">→ links</button>
+        <button class="btn" type="button" data-stem="right">← rechts</button>
+      </div>
+      <label for="crossVW">Breedte verticale weg <input type="range" id="crossVW" min="160" max="720" step="10" value="240"></label>
+      <label for="crossHW">Breedte horizontale weg <input type="range" id="crossHW" min="160" max="640" step="10" value="240"></label>
+    </div>
+    <div class="roadbar" id="roadbar" hidden>
+      <label for="roadW">Breedte van de weg <input type="range" id="roadW" min="160" max="760" step="10" value="280"></label>
+      <div class="grp">
+        <button class="btn" type="button" id="oV">↕ Verticaal</button>
+        <button class="btn" type="button" id="oH">↔ Horizontaal</button>
+      </div>
+      <label class="push" for="preset">Voorbeeld
+        <select id="preset"><option value="">Kies een situatie…</option></select>
+      </label>
+    </div>
+    <div class="toolbar">
+      <div class="grp">
+        <span class="sellabel" id="selLabel">Niets gekozen</span>
+        <button class="btn" id="bSmall" type="button" title="Kleiner (-)">− Kleiner</button>
+        <button class="btn" id="bBig" type="button" title="Groter (+)">+ Groter</button>
+        <button class="btn" id="bRotL" type="button" title="Draai links">↺ Links</button>
+        <button class="btn" id="bRotR" type="button" title="Draai rechts">↻ Rechts</button>
+        <button class="btn" id="bFlip" type="button" title="Spiegel links-rechts">⇋ Spiegel</button>
+        <button class="btn" id="bLight" type="button" hidden>Ander licht</button>
+        <span id="laneEd" class="laneEd" hidden></span>
+        <button class="btn" id="bLine" type="button" hidden title="Rijstrooklijnen onderbroken of volledig">Lijnen: onderbroken / vol</button>
+        <button class="btn" id="bShape" type="button" hidden title="Wissel tussen enkele standaardvormen">Andere vorm</button>
+        <button class="btn" id="bDup" type="button">Kopie</button>
+        <button class="btn danger" id="bDel" type="button" title="Verwijder (Delete)">Verwijder</button>
+      </div>
+      <div class="grp end">
+        <button class="btn" id="bUndo" type="button" title="Ongedaan maken (Ctrl+Z)">↶ Ongedaan</button>
+        <button class="btn" id="bRedo" type="button" title="Opnieuw (Ctrl+Shift+Z)">↷ Opnieuw</button>
+        <button class="btn danger" id="bClear" type="button">Alles wissen</button>
+        <button class="btn" id="bImport" type="button" title="Een bewaarde tekening (.json) openen">Tekening openen</button>
+        <button class="btn" id="bExport" type="button" title="Beide tekeningen bewaren als bestand (.json)">Tekening bewaren</button>
+        <button class="btn primary" id="bSave" type="button">Opslaan als afbeelding</button>
+        <input type="file" id="fileIn" accept=".json,application/json" hidden>
+      </div>
+    </div>
+    <div class="canvas-wrap">
+      <svg id="scene" viewBox="0 0 1000 860" role="img" aria-label="Tekenvlak">
+        <defs>
+          <pattern id="paving" width="36" height="36" patternUnits="userSpaceOnUse">
+            <path d="M0 0H36M0 0V36" stroke="#8d7a4c" stroke-opacity=".22" stroke-width="1.5" fill="none"/>
+          </pattern>
+          <filter id="sh" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000" flood-opacity=".28"/>
+          </filter>
+        </defs>
+        <g id="base-cross">
+          <rect width="1000" height="860" fill="#6f6a64"/>
+          <g id="cStroke" stroke="#b7a578" stroke-width="6" stroke-linejoin="round" fill="#dccda6"></g>
+          <g id="cFill" stroke="none" fill="url(#paving)"></g>
+        </g>
+        <g id="base-road" display="none">
+          <rect width="1000" height="860" fill="#93c9a4"/>
+          <rect id="rAsph" x="360" y="0" width="280" height="860" fill="#6f6a64"/>
+        </g>
+        <g id="items"></g>
+        <g id="sel"></g>
+      </svg>
+      <div class="hint" id="hint">Klik op iets in de lijst, of sleep het naar het tekenvlak.</div>
+    </div>
+  </div>
+</main>
+
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-label="Afbeelding">
+  <div class="card">
+    <p id="modalMsg"></p>
+    <img id="modalImg" alt="Tekening als afbeelding">
+    <div class="row">
+      <a class="btn primary" id="modalDownload" href="#" download>Downloaden</a>
+      <button class="btn" id="modalClose" type="button">Sluiten</button>
+    </div>
+  </div>
+</div>
+
+<noscript><p style="padding:16px">Deze app heeft JavaScript nodig.</p></noscript>
+</body>
+</html>

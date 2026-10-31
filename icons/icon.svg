@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#dccda6"/>
+  <g fill="#6f6a64">
+    <rect x="186" y="0" width="140" height="512"/>
+    <rect x="0" y="186" width="512" height="140"/>
+  </g>
+  <g stroke="#f3f3ee" stroke-width="8" stroke-dasharray="26 18">
+    <line x1="256" y1="0" x2="256" y2="176"/>
+    <line x1="256" y1="336" x2="256" y2="512"/>
+    <line x1="0" y1="256" x2="176" y2="256"/>
+    <line x1="336" y1="256" x2="512" y2="256"/>
+  </g>
+  <g transform="translate(291 392)">
+    <rect x="-24" y="-46" width="48" height="92" rx="16" fill="#d33a2f" stroke="#8a2119" stroke-width="3"/>
+    <path d="M-17 -20Q0 -26 17 -20L14 -6H-14Z" fill="#bfe0ee"/>
+    <rect x="-17" y="-4" width="34" height="24" rx="5" fill="#e0675e"/>
+  </g>
+  <g transform="translate(392 221) rotate(270)">
+    <rect x="-24" y="-46" width="48" height="92" rx="16" fill="#2d63c8" stroke="#1b3d7d" stroke-width="3"/>
+    <path d="M-17 -20Q0 -26 17 -20L14 -6H-14Z" fill="#bfe0ee"/>
+    <rect x="-17" y="-4" width="34" height="24" rx="5" fill="#5f8ad8"/>
+  </g>
+</svg>
