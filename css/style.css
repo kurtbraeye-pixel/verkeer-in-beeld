@@ -48,17 +48,7 @@ header{
 .brand{display:flex; flex-direction:column; gap:2px; min-width:0}
 h1{font-size:20px; font-weight:600; margin:0; letter-spacing:-.01em; text-wrap:balance}
 .byline{font-size:12.5px; opacity:.9}
-header .seg{border-color:rgba(255,255,255,.45); background:rgba(4,28,55,.25)}
-header .seg button{color:#fff}
-header .seg button+button{border-left-color:rgba(255,255,255,.45)}
-header .seg button.on{background:#fff; color:var(--brand)}
 header :focus-visible{outline-color:#fff}
-.seg{display:inline-flex; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--panel)}
-.seg button{
-  font:inherit; font-size:13.5px; padding:8px 16px; border:0; background:transparent; color:var(--ink); cursor:pointer;
-}
-.seg button+button{border-left:1px solid var(--line)}
-.seg button.on{background:var(--accent); color:var(--accent-ink); font-weight:500}
 main{flex:1; min-height:0; display:grid; grid-template-columns:292px minmax(0,1fr); gap:14px}
 .palette{
   min-height:0; overflow-y:auto; background:var(--panel); border:1px solid var(--line);
@@ -108,6 +98,16 @@ summary:hover{color:var(--accent)}
 .toolbar,.roadbar{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
 .roadbar{padding:8px 12px; background:var(--panel); border:1px solid var(--line); border-radius:12px; gap:14px}
 .roadbar[hidden]{display:none!important}
+/* Eerst de situatie kiezen (tabbladen), daarna de opties van die situatie in de balk eronder. */
+.scenepick{display:flex; flex-direction:column}
+.tabs{display:flex; gap:4px; padding-left:8px}
+.tabs button{
+  font:inherit; font-size:14px; font-weight:500; padding:9px 20px; cursor:pointer;
+  border:1px solid var(--line); border-bottom:0; border-radius:12px 12px 0 0;
+  background:var(--tile); color:var(--muted); margin-bottom:-1px;
+}
+.tabs button:hover{color:var(--accent)}
+.tabs button.on{background:var(--panel); color:var(--accent); box-shadow:inset 0 3px 0 var(--accent); position:relative; z-index:1}
 .roadbar label{font-size:13px; display:inline-flex; align-items:center; gap:10px}
 .roadbar input[type=range]{width:200px; accent-color:var(--accent)}
 .roadbar select{

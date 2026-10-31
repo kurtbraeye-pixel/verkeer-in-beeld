@@ -2,7 +2,7 @@
    Strategie "stale-while-revalidate": toon meteen de bewaarde versie en haal op de
    achtergrond de nieuwste op; die is er bij de volgende keer openen.
    Verhoog VERSION bij een grote wijziging om oude bestanden meteen op te ruimen. */
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE = 'verkeer-in-beeld-' + VERSION;
 const FILES = [
   './',
