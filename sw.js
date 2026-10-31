@@ -1,8 +1,8 @@
 /* Service worker: bewaart de app op het toestel zodat ze ook zonder internet werkt.
-   Strategie "stale-while-revalidate": toon meteen de bewaarde versie en haal op de
-   achtergrond de nieuwste op; die is er bij de volgende keer openen.
-   Verhoog VERSION bij een grote wijziging om oude bestanden meteen op te ruimen. */
-const VERSION = 'v3';
+   Strategie "network-first": haal altijd eerst de nieuwste versie op (zo passen HTML,
+   CSS en JS altijd bij elkaar) en val alleen zonder internet terug op de bewaarde kopie.
+   Verhoog VERSION bij een nieuwe versie om oude bestanden op te ruimen. */
+const VERSION = 'v5';
 const CACHE = 'verkeer-in-beeld-' + VERSION;
 const FILES = [
   './',
@@ -37,17 +37,14 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
   e.respondWith(
-    caches.open(CACHE).then((cache) =>
-      cache.match(req, { ignoreSearch: true }).then((cached) => {
-        const fresh = fetch(req)
-          .then((res) => {
-            if (res.ok) cache.put(req, res.clone());
-            return res;
-          })
-          .catch(() => cached);
-        if (cached) e.waitUntil(fresh);
-        return cached || fresh;
+    fetch(req, { cache: 'no-cache' })
+      .then((res) => {
+        if (res.ok) {
+          const copy = res.clone();
+          e.waitUntil(caches.open(CACHE).then((c) => c.put(req, copy)));
+        }
+        return res;
       })
-    )
+      .catch(() => caches.match(req, { ignoreSearch: true }))
   );
 });

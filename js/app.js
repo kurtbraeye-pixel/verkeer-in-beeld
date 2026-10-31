@@ -138,13 +138,22 @@ function markSpot(item){
   extra.x=p[0];extra.y=p[1];return extra;
 }
 function countOf(list){return items.filter(function(o){return list.indexOf(o.type)>-1;}).length;}
+var POSTS=['light','stop','yield','priority','endpriority','noentry','ahead','mergesign','mergesign_l','lanesign','workwarn'];
+function postsFacing(rot){return items.filter(function(o){return POSTS.indexOf(o.type)>-1&&o.rot===rot;}).length;}
 function objectSpot(item){
   var t=item.type;
   if(['agent_up','agent_side','barrier','cone','tag'].indexOf(t)>-1){return {x:CX+countOf([t])*44,y:CY};}
-  var group=(t==='ped'||t==='cyclist')?['ped','cyclist']:(t==='light'?['light']:['stop','yield','priority','endpriority','noentry','ahead','mergesign','mergesign_l','lanesign','workwarn']);
-  var g=G(),CORNERS=[[CX+g.hv+70,CY+g.hh+70],[CX-g.hv-70,CY-g.hh-70],[CX+g.hv+70,CY-g.hh-70],[CX-g.hv-70,CY+g.hh+70]];
-  var n=countOf(group),c=CORNERS[n%4],row=Math.floor(n/4),sx=c[0]<CX?-1:1;
-  return {x:c[0]+sx*row*60,y:c[1]};
+  var g=G();
+  if(t==='ped'||t==='cyclist'){
+    /* op het voetpad links van de rijbaan (rechts staan de borden); elke volgende voetganger iets verder terug */
+    var j=items.filter(function(o){return (o.type==='ped'||o.type==='cyclist')&&o.rot===ROT[dir];}).length*60,e=190+j;
+    var Q={bottom:[CX-g.hv-30,CY+g.hh+e],top:[CX+g.hv+30,CY-g.hh-e],left:[CX-g.hv-e,CY-g.hh-30],right:[CX+g.hv+e,CY+g.hh+30]}[dir];
+    return {x:Q[0],y:Q[1]};
+  }
+  /* borden en lichten: op de hoek rechts van de naderende bestuurder, elk volgend bord iets verder terug */
+  var k=postsFacing(ROT[dir])*80,d=70;
+  var P={bottom:[CX+g.hv+d,CY+g.hh+d+k],top:[CX-g.hv-d,CY-g.hh-d-k],left:[CX-g.hv-d-k,CY+g.hh+d],right:[CX+g.hv+d+k,CY-g.hh-d]}[dir];
+  return {x:P[0],y:P[1]};
 }
 function crossPlace(it){
   var def=TYPES[it.type];
@@ -184,9 +193,9 @@ function roadPlace(it){
   if(LANEMARKS.indexOf(t)>-1){q=pt(210,70);return {x:q[0],y:q[1],rot:ROT[d2]};}
   if(t==='barrier'){return {x:CX+countOf([t])*30,y:CY,rot:v?0:90,w:300};}
   if(['agent_up','agent_side','cone','tag','baken','routepijl','tree','triangleI','kuil'].indexOf(t)>-1){return {x:CX+countOf([t])*44,y:CY};}
-  var group=(t==='ped'||t==='cyclist')?['ped','cyclist']:(t==='light'?['light']:['stop','yield','priority','endpriority','noentry','ahead','mergesign','mergesign_l','lanesign','workwarn']);
-  var ng=countOf(group),a=[620,470,320,170][ng%4],edge=RW/2+60;
-  return v?{x:CX+edge,y:a}:{x:a+60,y:CY+edge};
+  if(t==='ped'||t==='cyclist'){q=pt(260+countOf(['ped','cyclist'])*60,RW/2+40);return {x:q[0],y:q[1],rot:ROT[d2]};}
+  q=pt(240+postsFacing(ROT[d2])*150,RW/2+60);
+  return {x:q[0],y:q[1],rot:ROT[d2]};
 }
 function addItem(entry,x,y){
   var def=TYPES[entry.type];
@@ -292,6 +301,9 @@ var ids=['bSmall','bBig','bRotL','bRotR','bFlip','bDup','bDel'];
 function updateToolbar(it){
   ids.forEach(function(i){document.getElementById(i).disabled=!it;});
   document.getElementById('bLight').hidden=!(it&&it.type==='light');
+  var bb=document.getElementById('bBeacon');
+  bb.hidden=!(it&&TYPES[it.type].beacon);
+  if(!bb.hidden)bb.textContent=it.beacon===false?'Zwaailicht aan':'Zwaailicht uit';
   document.getElementById('bLine').hidden=!(it&&(it.type==='lanesign'||it.type==='routepijl'));
   if(it)document.getElementById('bLine').textContent=it.type==='routepijl'?'Streepjes aan/uit':'Lijnen: onderbroken / vol';
   document.getElementById('bShape').hidden=!(it&&isPts(it));
@@ -436,6 +448,10 @@ document.getElementById('bFlip').onclick=function(){var it=sel();if(it)mutate(fu
 document.getElementById('bLight').onclick=function(){
   var it=sel();if(!it)return;
   mutate(function(){var o=['red','orange','green'];it.state=o[(o.indexOf(it.state||'red')+1)%3];});
+};
+document.getElementById('bBeacon').onclick=function(){
+  var it=sel();if(!it)return;
+  mutate(function(){if(it.beacon===false)delete it.beacon;else it.beacon=false;});
 };
 document.getElementById('bLine').onclick=function(){var it=sel();if(it)mutate(function(){if(it.type==='routepijl')it.dash=!it.dash;else it.solid=!it.solid;});};
 document.getElementById('bShape').onclick=function(){

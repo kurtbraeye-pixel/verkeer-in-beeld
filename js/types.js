@@ -128,6 +128,17 @@ function triangle(cx,cy){
   return '<g transform="translate('+cx+' '+cy+')"><polygon points="0,-17 17,13 -17,13" fill="#fff" stroke="#d3202a" stroke-width="6" stroke-linejoin="round"/><polygon points="0,-9 8,7 -8,7" fill="#e5e5e0"/></g>';
 }
 function mirror(s){return '<g transform="scale(-1 1)">'+s+'</g>';}
+/* blauw zwaailicht van een prioritair voertuig: lamp + gloed als het aan staat (it.beacon===false = uit) */
+function lamp(x,y,w,h,on){
+  return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="2.5" fill="'+(on?'#9ad6ff':'#1d3a6b')+'" stroke="'+(on?'#2f6fe0':'#0f2247')+'" stroke-width="1.5"/>';
+}
+function glow(pts,on){
+  if(!on)return '';
+  return pts.map(function(p){
+    var c=' cx="'+p[0]+'" cy="'+p[1]+'"';
+    return '<circle'+c+' r="34" fill="#2f8bff" opacity=".2"/><circle'+c+' r="22" fill="#3d9bff" opacity=".35"/><circle'+c+' r="12" fill="#7cc4ff" opacity=".7"/><circle'+c+' r="5.5" fill="#fff"/>';
+  }).join('');
+}
 
 /* stretch: 'w' | 'h' | 'wh' = mag uitgerekt worden; tw/th = afmetingen op het tegeltje */
 var TYPES={
@@ -176,34 +187,34 @@ var TYPES={
       '<circle cx="0" cy="-3" r="7.5" fill="#3b3f45" stroke="#1d2024" stroke-width="1.5"/>'+
       '<circle cx="0" cy="-36" r="3" fill="#ffe27a"/>';
   }},
-  ambulance:{label:'Ziekenwagen',kind:'vehicle',w:72,h:134,draw:function(){
+  ambulance:{label:'Ziekenwagen',kind:'vehicle',beacon:true,w:72,h:134,draw:function(it){
+    var on=it.beacon!==false;
     return wheels([[-36,-44],[28,-44],[-36,26],[28,26]])+
       '<rect x="-32" y="-67" width="64" height="134" rx="18" fill="#f5f7f8" stroke="#a9b2b8" stroke-width="2.5"/>'+
       '<path d="M-23 -34Q0 -42 23 -34L19 -14H-19Z" fill="#bfe0ee" stroke="#a9b2b8" stroke-width="1.5"/>'+
       '<rect x="-23" y="-14" width="46" height="74" rx="7" fill="#e8edf0" stroke="#a9b2b8" stroke-width="1.5"/>'+
       '<rect x="-4" y="16" width="8" height="30" fill="#d62b2b"/><rect x="-15" y="27" width="30" height="8" fill="#d62b2b"/>'+
-      '<rect x="-22" y="-11" width="44" height="8" rx="3" fill="#2f6fe0" stroke="#12306b" stroke-width="1.5"/>'+
-      lights(-65,62,25,25);
+      lamp(-22,-11,44,8,on)+lights(-65,62,25,25)+glow([[-13,-7],[13,-7]],on);
   }},
-  police:{label:'Politie',kind:'vehicle',w:70,h:124,draw:function(){
+  police:{label:'Politie',kind:'vehicle',beacon:true,w:70,h:124,draw:function(it){
+    var on=it.beacon!==false;
     return wheels([[-36,-42],[28,-42],[-36,26],[28,26]])+
       '<rect x="-32" y="-62" width="64" height="124" rx="24" fill="#f2f4f6" stroke="#8a96a0" stroke-width="2.5"/>'+
       '<rect x="-30" y="-52" width="60" height="9" fill="#1b4f9c"/><rect x="-30" y="38" width="60" height="9" fill="#1b4f9c"/>'+
       '<path d="M-23 -28Q0 -36 23 -28L19 -8H-19Z" fill="#bfe0ee" stroke="#8a96a0" stroke-width="1.5"/>'+
       '<rect x="-23" y="-8" width="46" height="32" rx="7" fill="#e6eaed" stroke="#8a96a0" stroke-width="1.5"/>'+
-      '<rect x="-20" y="-5" width="20" height="8" rx="2" fill="#2f6fe0"/><rect x="0" y="-5" width="20" height="8" rx="2" fill="#e03a30"/>'+
-      lights(-60,56,25,25);
+      lamp(-20,-5,19,8,on)+lamp(1,-5,19,8,on)+lights(-60,56,25,25)+glow([[-10,-1],[10,-1]],on);
   }},
-  fire:{label:'Brandweer',kind:'vehicle',w:78,h:164,draw:function(){
-    var r='',y;
+  fire:{label:'Brandweer',kind:'vehicle',beacon:true,w:78,h:164,draw:function(it){
+    var r='',y,on=it.beacon!==false;
     for(y=-10;y<=70;y+=11)r+='<line x1="-15" y1="'+y+'" x2="15" y2="'+y+'" stroke="#cfd5d9" stroke-width="2.5"/>';
     return wheels([[-40,-56],[32,-56],[-40,24],[32,24],[-40,52],[32,52]])+
       '<rect x="-34" y="-82" width="68" height="164" rx="14" fill="#d4271f" stroke="#7e130e" stroke-width="2.5"/>'+
       '<path d="M-26 -72Q0 -80 26 -72L22 -50H-22Z" fill="#bfe0ee" stroke="#7e130e" stroke-width="1.5"/>'+
       '<rect x="-26" y="-50" width="52" height="28" rx="6" fill="#e24b42" stroke="#7e130e" stroke-width="1.5"/>'+
-      '<rect x="-20" y="-44" width="40" height="7" rx="2" fill="#2f6fe0"/>'+
+      lamp(-20,-44,40,7,on)+
       '<line x1="-15" y1="-16" x2="-15" y2="76" stroke="#cfd5d9" stroke-width="4"/><line x1="15" y1="-16" x2="15" y2="76" stroke="#cfd5d9" stroke-width="4"/>'+r+
-      lights(-80,78,28,28);
+      lights(-80,78,28,28)+glow([[-12,-40.5],[12,-40.5]],on);
   }},
   cyclist:{label:'Fietser',kind:'object',color:true,w:130,h:118,draw:function(it){
     var c=it.color,d=shade(c,-.35),s='';
@@ -216,16 +227,16 @@ var TYPES={
     s+='<circle cx="18" cy="-58" r="9" fill="#f0c29b"/><path d="M9 -60Q9 -69 18 -69Q27 -69 27 -60Z" fill="'+d+'"/>';
     return '<g transform="translate(0,10)">'+s+'</g>';
   }},
-  ped:{label:'Voetganger',kind:'object',color:true,w:48,h:114,draw:function(it){
-    var c=it.color,d=shade(c,-.2);
-    return '<rect x="-12" y="12" width="11" height="40" rx="4" fill="#3d4f73"/><rect x="1" y="12" width="11" height="40" rx="4" fill="#3d4f73"/>'+
-      '<rect x="-14" y="49" width="14" height="8" rx="3" fill="#222"/><rect x="0" y="49" width="14" height="8" rx="3" fill="#222"/>'+
-      '<rect x="-24" y="-28" width="9" height="38" rx="4.5" fill="'+d+'"/><rect x="15" y="-28" width="9" height="38" rx="4.5" fill="'+d+'"/>'+
-      '<circle cx="-19.5" cy="12" r="5" fill="#f0c29b"/><circle cx="19.5" cy="12" r="5" fill="#f0c29b"/>'+
-      '<rect x="-16" y="-31" width="32" height="46" rx="10" fill="'+c+'"/>'+
-      '<circle cx="0" cy="-44" r="12" fill="#f0c29b"/><path d="M-12 -46Q-12 -58 0 -58Q12 -58 12 -46Q6 -52 -12 -46Z" fill="#4a3426"/>';
+  ped:{label:'Voetganger',kind:'object',follow:true,color:true,w:52,h:52,draw:function(it){
+    /* bovenaanzicht, stappend: linkervoet voor, rechterarm voor */
+    var c=it.color,d=shade(c,-.3),skin='#f0c29b';
+    return '<ellipse cx="-8" cy="-15" rx="5" ry="8" fill="#2b2e33"/><ellipse cx="8" cy="13" rx="5" ry="8" fill="#2b2e33"/>'+
+      '<ellipse cx="-22" cy="7" rx="5.5" ry="10" fill="'+d+'"/><circle cx="-22" cy="16" r="4" fill="'+skin+'"/>'+
+      '<ellipse cx="22" cy="-7" rx="5.5" ry="10" fill="'+d+'"/><circle cx="22" cy="-16" r="4" fill="'+skin+'"/>'+
+      '<ellipse cx="0" cy="0" rx="21" ry="11" fill="'+c+'" stroke="'+d+'" stroke-width="2"/>'+
+      '<circle cx="0" cy="-1.5" r="10" fill="'+skin+'"/><circle cx="0" cy="1.5" r="9.5" fill="#4a3426"/>';
   }},
-  light:{label:'Verkeerslicht',kind:'object',w:40,h:150,draw:function(it){
+  light:{label:'Verkeerslicht',kind:'object',follow:true,w:40,h:150,draw:function(it){
     var L=[['#ff3b30','#4a1f1c'],['#ffa41b','#4a3716'],['#2fd66a','#15361f']];
     var on={red:0,orange:1,green:2}[it.state||'red'];
     var s='<rect x="-3.5" y="16" width="7" height="54" fill="#5d6368"/><rect x="-13" y="66" width="26" height="7" rx="2" fill="#3f4448"/><rect x="-18" y="-76" width="36" height="94" rx="10" fill="#25292d" stroke="#0e1012" stroke-width="2"/>';
@@ -237,17 +248,17 @@ var TYPES={
     });
     return s;
   }},
-  stop:{label:'Stopbord',kind:'object',w:68,h:150,draw:function(){
+  stop:{label:'Stopbord',kind:'object',follow:true,w:68,h:150,draw:function(){
     return signWrap('<polygon points="'+octagon(33,-45)+'" fill="#fff"/><polygon points="'+octagon(29,-45)+'" fill="#d3202a"/><text x="0" y="-39" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="17" fill="#fff">STOP</text>');
   }},
-  yield:{label:'Geef voorrang',kind:'object',w:68,h:150,draw:function(){
+  yield:{label:'Geef voorrang',kind:'object',follow:true,w:68,h:150,draw:function(){
     return signWrap('<polygon points="-26,-62 26,-62 0,-17" fill="#fff" stroke="#d3202a" stroke-width="9" stroke-linejoin="round"/>');
   }},
-  priority:{label:'Voorrangsweg',kind:'object',w:68,h:150,draw:function(){
+  priority:{label:'Voorrangsweg',kind:'object',follow:true,w:68,h:150,draw:function(){
     return signWrap('<polygon points="0,-81 36,-45 0,-9 -36,-45" fill="#fff" stroke="#111" stroke-width="2.6" stroke-linejoin="round"/>'+
       '<polygon points="0,-68 23,-45 0,-22 -23,-45" fill="#e8801a" stroke="#111" stroke-width="1.6" stroke-linejoin="miter"/>');
   }},
-  endpriority:{label:'Einde voorrangsweg',kind:'object',w:68,h:150,draw:function(){
+  endpriority:{label:'Einde voorrangsweg',kind:'object',follow:true,w:68,h:150,draw:function(){
     return signWrap('<defs><clipPath id="epc"><polygon points="600,70 1130,600 600,1130 70,600"/></clipPath></defs>'+
       '<g transform="translate(0,-45) scale(0.066) translate(-600,-600)">'+
       '<polygon points="600,60 1140,600 600,1140 60,600" fill="#fff"/>'+
@@ -255,15 +266,15 @@ var TYPES={
       '<g fill="#e8801a" stroke="#111" stroke-width="24" stroke-linejoin="miter"><polygon points="270,600 600,270 710,380 380,710"/><polygon points="930,600 600,930 490,820 820,490"/></g>'+
       '<polygon points="600,60 1140,600 600,1140 60,600" fill="none" stroke="#111" stroke-width="32" stroke-linejoin="round"/></g>');
   }},
-  noentry:{label:'Verboden toegang',kind:'object',w:68,h:150,draw:function(){
+  noentry:{label:'Verboden toegang',kind:'object',follow:true,w:68,h:150,draw:function(){
     return signWrap('<circle cx="0" cy="-45" r="31" fill="#d3202a" stroke="#fff" stroke-width="3"/><rect x="-21" y="-51" width="42" height="12" rx="2" fill="#fff"/>');
   }},
-  ahead:{label:'Rechtdoor (verplicht)',kind:'object',w:68,h:150,draw:function(){
+  ahead:{label:'Rechtdoor (verplicht)',kind:'object',follow:true,w:68,h:150,draw:function(){
     return signWrap('<circle cx="0" cy="-45" r="31" fill="#1b6ec2" stroke="#fff" stroke-width="3"/><path d="M0 -68L15 -47H6V-24H-6V-47H-15Z" fill="#fff"/>');
   }},
-  mergesign:{label:'Vermindering rechts',kind:'object',w:48,h:150,draw:function(){return signWrap(mergePlate());}},
-  mergesign_l:{label:'Vermindering links',kind:'object',w:48,h:150,draw:function(){return signWrap(mirror(mergePlate()));}},
-  lanesign:{label:'Rijstrookbord',kind:'object',w:112,h:150,wf:function(it){return (it.lanes||['s','s']).length*30+14;},draw:function(it){
+  mergesign:{label:'Vermindering rechts',kind:'object',follow:true,w:48,h:150,draw:function(){return signWrap(mergePlate());}},
+  mergesign_l:{label:'Vermindering links',kind:'object',follow:true,w:48,h:150,draw:function(){return signWrap(mirror(mergePlate()));}},
+  lanesign:{label:'Rijstrookbord',kind:'object',follow:true,w:112,h:150,wf:function(it){return (it.lanes||['s','s']).length*30+14;},draw:function(it){
     var L=it.lanes||['s','s'],n=L.length,Wd=n*30+14,s='',i,x0=-Wd/2;
     s+='<rect x="'+x0+'" y="-86" width="'+Wd+'" height="74" rx="7" fill="#22558c" stroke="#fff" stroke-width="3"/>';
     s+='<rect x="'+(x0+3.5)+'" y="-82.5" width="'+(Wd-7)+'" height="67" rx="4.5" fill="none" stroke="#fff" stroke-width="1"/>';
@@ -271,7 +282,7 @@ var TYPES={
     for(i=0;i<n;i++)s+=laneArrow(L[i],x0+7+15+i*30);
     return signWrap(s);
   }},
-  workwarn:{label:'Wegenwerken',kind:'object',w:72,h:150,draw:function(){
+  workwarn:{label:'Wegenwerken',kind:'object',follow:true,w:72,h:150,draw:function(){
     return signWrap('<g transform="translate(0,-18) scale(0.072) translate(-605,-1020)">'+
       '<polygon points="610,70 75,975 1135,975" fill="#c0281f" stroke="#c0281f" stroke-width="95" stroke-linejoin="round"/>'+
       '<polygon points="610,190 200,900 1020,900" fill="#f1f1ef"/>'+
@@ -402,7 +413,7 @@ var BERMS=['midberm','grasberm','verhardeberm','stoep','fietspad','parkeer'];
 var LANEMARKS=['stopline','sharks','arrow_s','arrow_r','arrow_l','arrow_sr','arrow_sl','arrow_mr','arrow_ml'];
 
 var SECTIONS=[
-  {el:'t-veh',entries:[{type:'car'},{type:'bus'},{type:'truck'},{type:'bike'},{type:'ambulance'},{type:'police'},{type:'fire'},{type:'cyclist'},{type:'ped'}]},
+  {el:'t-veh',entries:[{type:'car'},{type:'bus'},{type:'truck'},{type:'bike'},{type:'ambulance'},{type:'police'},{type:'fire'},{type:'ped'}]},
   {el:'t-light',entries:[{type:'light',state:'red',label:'Rood'},{type:'light',state:'orange',label:'Oranje'},{type:'light',state:'green',label:'Groen'}]},
   {el:'t-sign',entries:[{type:'stop'},{type:'yield'},{type:'priority'},{type:'endpriority'},{type:'noentry'},{type:'ahead'},{type:'mergesign'},{type:'mergesign_l'},
     {type:'lanesign',lanes:['l','s'],label:'Rijstrookbord'},{type:'lanesign',lanes:['s','r'],label:'Rijstrookbord'},{type:'lanesign',lanes:['l','s','r'],label:'Rijstrookbord'},{type:'lanesign',lanes:['s','s','s','r'],label:'Rijstrookbord'},{type:'lanesign',lanes:['s','s','r'],label:'Rijstrookbord'},{type:'lanesign',lanes:['l','s','s'],label:'Rijstrookbord'},{type:'lanesign',lanes:['s','s'],label:'Rijstrookbord'}]},
@@ -448,6 +459,7 @@ function sanitizeItem(raw){
   if(typeof raw.text==='string'&&raw.text)it.text=raw.text.slice(0,3);
   if(raw.solid)it.solid=true;
   if(raw.dash)it.dash=true;
+  if(raw.beacon===false&&d.beacon)it.beacon=false;
   if(d.stretch||raw.type==='vlak'){
     if(raw.w!=null)it.w=clamp(num(raw.w,d.w),20,1400);
     if(raw.h!=null)it.h=clamp(num(raw.h,d.h),20,1600);

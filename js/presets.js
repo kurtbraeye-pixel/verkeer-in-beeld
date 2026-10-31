@@ -99,12 +99,12 @@ var XPRESETS=[
       tagAt(560,810,'A'),tagAt(905,370,'B'),tagAt(95,490,'C')];
   }},
   {id:'c3',label:'Voorrangsweg en "geef voorrang"',vw:240,hw:240,arm:null,build:function(){
-    return [I('priority',310,620),I('priority',690,240),I('yield',690,620),I('yield',310,240),
+    return [I('priority',310,620,{rot:90}),I('priority',690,240,{rot:270}),I('yield',690,620),I('yield',310,240,{rot:180}),
       I('sharks',560,610,{w:108}),I('sharks',440,250,{rot:180,w:108}),
       carX('bottom',C.red),carX('right',C.blue),tagAt(560,810,'A'),tagAt(905,370,'B')];
   }},
   {id:'c4',label:'Stopbord op het kruispunt',vw:240,hw:240,arm:null,build:function(){
-    return [I('priority',310,620),I('priority',690,240),I('stop',690,620),
+    return [I('priority',310,620,{rot:90}),I('priority',690,240,{rot:270}),I('stop',690,620),
       I('stopline',560,621,{w:108}),
       carX('bottom',C.red),carX('right',C.blue),carX('left',C.orange),
       tagAt(560,810,'A'),tagAt(905,370,'B'),tagAt(95,490,'C')];
@@ -119,10 +119,10 @@ var XPRESETS=[
       I('car',680,800,{color:C.red}),I('car',440,150,{rot:180,color:C.blue})];
   }},
   {id:'c6',label:'Kruispunt met verkeerslichten',vw:240,hw:240,arm:null,build:function(){
-    return [I('light',690,620,{state:'red'}),I('light',310,240,{state:'red'}),I('light',310,620,{state:'green'}),I('light',690,240,{state:'green'}),
+    return [I('light',690,620,{state:'red'}),I('light',310,240,{state:'red',rot:180}),I('light',310,620,{state:'green',rot:90}),I('light',690,240,{state:'green',rot:270}),
       I('stopline',560,621,{w:108}),I('stopline',440,239,{rot:180,w:108}),I('stopline',309,490,{rot:90,w:108}),I('stopline',691,370,{rot:270,w:108}),
       I('zebra',500,580,{w:240,h:56}),I('zebra',500,280,{w:240,h:56}),
-      I('ped',440,582,{color:C.orange}),I('ped',560,278,{color:C.green}),
+      I('ped',440,582,{color:C.orange,rot:90}),I('ped',560,278,{color:C.green,rot:270}),
       carX('bottom',C.red),carX('left',C.blue),carX('right',C.white)];
   }},
   {id:'c7',label:'Verkeerslichten, borden en wegmarkeringen',vw:720,hw:240,arm:null,build:function(){
@@ -132,7 +132,7 @@ var XPRESETS=[
       I('arrow_l',560,720),I('arrow_s',680,720),I('arrow_r',800,720),
       I('dashed',70,430,{h:140,rot:90}),I('dashed',930,430,{h:140,rot:90}),
       I('lanesign',930,760,{lanes:['l','s','r'],s:1.2}),
-      I('light',900,592,{state:'green'}),I('light',110,258,{state:'green'}),
+      I('light',900,592,{state:'green'}),I('light',110,258,{state:'green',rot:180}),
       I('car',680,800,{color:C.red}),I('car',560,800,{color:C.orange}),I('car',440,150,{rot:180,color:C.blue})];
   }},
   {id:'c8',label:'Bevoegd persoon gaat voor lichten en borden',vw:240,hw:240,arm:null,build:function(){
@@ -143,7 +143,7 @@ var XPRESETS=[
   {id:'c9',label:'Zebrapad: afslaan met voetganger en fietser',vw:240,hw:240,arm:null,build:function(){
     return [I('zebra',650,430,{w:240,h:56,rot:90}),
       I('routepijl',605,560,{shape:3}),
-      I('ped',650,345,{color:C.orange}),I('cyclist',650,430,{color:C.blue}),
+      I('ped',650,345,{color:C.orange,rot:180}),I('bike',650,470,{color:C.blue,rot:180}),
       carX('bottom',C.red),tagAt(560,810,'A')];
   }}
 ];

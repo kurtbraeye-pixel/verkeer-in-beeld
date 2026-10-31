@@ -44,8 +44,8 @@ en open <http://localhost:8123>.
 
 ## Een nieuwe versie uitrollen
 
-Gebruikers krijgen wijzigingen automatisch: de app toont eerst de bewaarde versie
-en haalt op de achtergrond de nieuwe op, die bij de volgende keer openen actief is.
+Gebruikers krijgen wijzigingen automatisch: de app haalt altijd eerst de nieuwste
+bestanden op en gebruikt de bewaarde kopie alleen als er geen internet is.
 Voeg je nieuwe bestanden toe (bijvoorbeeld een extra JavaScript-bestand), zet ze dan
 ook in de lijst `FILES` in `sw.js` en verhoog `VERSION` (bv. `'v2'`).
 
