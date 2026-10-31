@@ -11,6 +11,7 @@ function I(type,x,y,o){
   if(o.lanes)it.lanes=o.lanes;
   if(o.text)it.text=o.text;
   if(o.state)it.state=o.state;
+  if(o.nopost)it.nopost=true;
   if(d.stretch){it.w=o.w||d.w;it.h=o.h||d.h;}
   if(type==='vlak')it.pts=copyPts(o.pts||SHAPES[2]);
   if(type==='routepijl')it.pts=copyPts(o.pts||ROUTES[o.shape==null?1:o.shape]);
@@ -171,16 +172,16 @@ function ringCar(deg,color){
   return I('car',Math.round(500+190*Math.cos(a)),Math.round(430+190*Math.sin(a)),{rot:deg,color:color});
 }
 /* Haaientanden bij elke ingang, alleen op de inrijstrook (tussen middengeleider en stoeprand), op afstand ds van het midden.
-   B1 en D5 staan op het middeneiland: per ingang een paartje (halve grootte), gedraaid naar wie oprijdt. */
-function entries(ds){
+   B1 rechts van elke ingang, op de hoek tussen rotonde en fietspad; één groot rond D5-bord (zonder paal) midden op het middeneiland. */
+function entries(ds,bike){
   ds=ds||265;
-  var out=[],i,arms=[['bottom',0],['left',90],['top',180],['right',270]];
+  var out=[I('d5',500,430,{s:1.3,nopost:true})],i,arms=[['bottom',0],['left',90],['top',180],['right',270]];
   var shark={bottom:[572,430+ds],top:[428,430-ds],left:[500-ds,502],right:[500+ds,358]};
+  var px=bike?148:150,py=bike?690-430:700-430,sc=bike?.5:.6;
   for(i=0;i<arms.length;i++){
     var k=arms[i][0],r=arms[i][1],a=r*Math.PI/180,c=Math.cos(a),sn=Math.sin(a);
-    /* posities voor de ingang onder (22 opzij, 84 onder het midden), gedraaid naar de andere ingangen */
-    var p1=[Math.round(500+22*c-84*sn),Math.round(430+22*sn+84*c)],p2=[Math.round(500-22*c-84*sn),Math.round(430-22*sn+84*c)];
-    out.push(I('yield',p1[0],p1[1],{rot:r,s:.5}),I('d5',p2[0],p2[1],{rot:r,s:.5}),
+    /* positie voor de ingang onder, gedraaid naar de andere ingangen */
+    out.push(I('yield',Math.round(500+px*c-py*sn),Math.round(430+px*sn+py*c),{rot:r,s:sc}),
       I('sharks',shark[k][0],shark[k][1],{rot:r,w:92}));
   }
   return out;
@@ -222,16 +223,21 @@ var RPRESETS=[
         I('bike',Math.round(500+235*Math.cos(a)),Math.round(430+235*Math.sin(a)),{rot:118,color:C.blue}),
         I('car',560,780,{color:C.red}),tagAt(480,800,'A'),tagAt(330,640,'B')]);
     }},
-  {id:'r7',label:'Rotonde met apart fietspad: fietsers wachten (haaientanden)',R:250,bike:'apart',
-    q:{question:'Wie mag eerst over de fietsoversteek?',answers:['A, want de fietser moet wachten aan de haaientanden','B, want fietsers hebben altijd voorrang','Wie het eerst aankomt','B, want hij komt van links'],correct:0},
+  {id:'r7',label:'Rotonde met vrijliggend fietspad: fietser verleent voorrang',R:250,bike:'apart',
+    q:{question:'A verlaat de rotonde. Wie mag eerst over de fietsoversteek?',answers:['A, want de fietser moet wachten aan het bord en de haaientanden','B, want fietsers hebben altijd voorrang op een fietsoversteek','B, want hij komt van rechts','Wie het eerst aankomt'],correct:0},
     build:function(){
-      /* Het fietspad is een achthoek met zijden op 330 van het midden; de platte zijden steken de armen haaks over.
-         Fietsers rijden in tegenwijzerzin. Twee kleine haaientanden haaks over het fietspad, vlak vóór elke oversteek. */
-      var D=330,out=entries(258);
-      out.push(I('sharks',370,430+D,{rot:90,w:52,s:.5}),I('sharks',500+D,560,{rot:0,w:52,s:.5}),
-        I('sharks',630,430-D,{rot:270,w:52,s:.5}),I('sharks',500-D,300,{rot:180,w:52,s:.5}));
+      /* Het fietspad is een achthoek met zijden op 330 van het midden; fietsers rijden in tegenwijzerzin.
+         Vóór elke oversteek: haaientanden over de volle breedte van het fietspad en een B1 voor de fietser.
+         De opstelling voor de oversteek onder wordt gedraaid naar de andere drie oversteken. */
+      var out=entries(258,true),k;
+      for(k=0;k<4;k++){
+        var r=-90*k,a=r*Math.PI/180,c=Math.cos(a),sn=Math.sin(a);
+        function at(x,y){return [Math.round(500+x*c-y*sn),Math.round(430+x*sn+y*c)];}
+        var t=at(-128,330),b=at(-172,370),rot=((90+r)%360+360)%360;
+        out.push(I('sharks',t[0],t[1],{rot:rot,w:62,s:.45}),I('yield',b[0],b[1],{rot:rot,s:.6}));
+      }
       return out.concat([I('bike',320,717,{rot:135,color:C.blue}),
-        I('car',560,820,{color:C.red}),tagAt(480,820,'A'),tagAt(285,690,'B')]);
+        I('car',440,690,{rot:180,color:C.red}),tagAt(440,585,'A'),tagAt(285,690,'B')]);
     }}
 ];
 

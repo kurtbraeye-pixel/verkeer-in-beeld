@@ -321,7 +321,10 @@ var TYPES={
     var t=esc(it.text||'50');
     return signWrap(ringPlate('#fff','<text x="0" y="-37" text-anchor="middle" font-family="Arial Narrow,Helvetica Neue,Arial,Helvetica,sans-serif" font-weight="700" font-size="23"'+(t.length>2?' textLength="38" lengthAdjust="spacingAndGlyphs"':'')+' fill="#111">'+t+'</text>'));
   }},
-  d5:{label:'Rotonde (D5)',kind:'object',follow:true,w:68,h:150,draw:function(){return signWrap(bluePlate(roundArrows()));}},
+  d5:{label:'Rotonde (D5)',kind:'object',follow:true,w:68,h:150,draw:function(it){
+    /* nopost: alleen het ronde bord, gecentreerd (bv. midden op het middeneiland) */
+    return it.nopost?'<g transform="translate(0 45)">'+bluePlate(roundArrows())+'</g>':signWrap(bluePlate(roundArrows()));
+  }},
   d7:{label:'Fietspad (D7)',kind:'object',follow:true,w:68,h:150,draw:function(){return signWrap(bluePlate(bikeIcon(0,-46,1.25,'#fff',2.6)));}},
   e1:{label:'Parkeren verboden (E1)',kind:'object',follow:true,w:68,h:150,draw:function(){
     return signWrap(ringPlate(FBLUE,'<path d="M-16 -62L16 -28" stroke="#d3202a" stroke-width="6"/>'));
@@ -588,6 +591,7 @@ function sanitizeItem(raw){
   if(raw.solid)it.solid=true;
   if(raw.dash)it.dash=true;
   if(raw.beacon===false&&d.beacon)it.beacon=false;
+  if(raw.nopost===true)it.nopost=true;
   if(d.stretch||raw.type==='vlak'){
     if(raw.w!=null)it.w=clamp(num(raw.w,d.w),20,1400);
     if(raw.h!=null)it.h=clamp(num(raw.h,d.h),20,1600);

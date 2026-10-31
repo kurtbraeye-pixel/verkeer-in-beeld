@@ -578,20 +578,32 @@ function drawRound(){
   g+='<g fill="#6f6a64" stroke="'+kerb+'" stroke-width="12">'+shapes+'</g><g fill="#6f6a64">'+shapes+'</g>';
   g+='<circle cx="500" cy="430" r="'+(ri+22)+'" fill="#948f87" stroke="#d9d5cb" stroke-width="3"/>';
   g+='<circle cx="500" cy="430" r="'+ri+'" fill="#7fb782" stroke="#d9d5cb" stroke-width="6"/>';
+  var apart=store.round.bike==='apart',D=BIKE_D,isl='fill="#7fb782" stroke="#d9d5cb" stroke-width="4" stroke-linejoin="round"';
   [0,90,180,270].forEach(function(r){
-    g+='<path transform="rotate('+r+' 500 430)" d="M500 '+(430+R+96)+'L519 '+(430+R+26)+'Q500 '+(430+R+4)+' 481 '+(430+R+26)+'Z" fill="#7fb782" stroke="#d9d5cb" stroke-width="4" stroke-linejoin="round"/>';
+    var t='<g transform="rotate('+r+' 500 430)">';
+    if(apart){
+      /* middengeleider onderbroken voor de fietsoversteek: een stuk tussen ring en oversteek, een stuk erna */
+      var c1=430+D-16,c2=430+D+16;
+      t+='<path d="M486 '+c1+'L514 '+c1+'L519 '+(430+R+26)+'Q500 '+(430+R+4)+' 481 '+(430+R+26)+'Z" '+isl+'/>';
+      t+='<path d="M486 '+c2+'L514 '+c2+'L500 '+(c2+44)+'Z" '+isl+'/>';
+    }else{
+      t+='<path d="M500 '+(430+R+96)+'L519 '+(430+R+26)+'Q500 '+(430+R+4)+' 481 '+(430+R+26)+'Z" '+isl+'/>';
+    }
+    g+=t+'</g>';
   });
   if(store.round.bike==='ring'){
     /* fietspad op de rotonde: rode strook langs de buitenrand van de ring, rondom, met aan beide zijden een witte onderbroken lijn */
     g+='<circle cx="500" cy="430" r="'+(R-15)+'" fill="none" stroke="#b85c46" stroke-width="28"/>';
     g+='<g fill="none" stroke="#f3f3ee" stroke-width="4" stroke-dasharray="14 10"><circle cx="500" cy="430" r="'+(R-31)+'"/><circle cx="500" cy="430" r="'+(R-3)+'"/></g>';
   }
-  if(store.round.bike==='apart'){
-    /* apart fietspad buiten de rotonde: een achthoek zoals een stopbord; de platte zijden steken de armen recht over.
-       Waar het een arm kruist, liggen er witte blokjes (fietsoversteek) aan beide kanten. */
-    var D=BIKE_D,o='',pts=[],k,rv=D/Math.cos(Math.PI/8);
+  if(apart){
+    /* vrijliggend fietspad: een achthoek zoals een stopbord; de platte zijden steken de armen recht over.
+       Op de oversteek zelf ligt gewoon asfalt met aan beide kanten witte blokjes; het fietspad ernaast is rood. */
+    var o='',pts=[],k,rv=D/Math.cos(Math.PI/8);
     for(k=0;k<8;k++){var a=(22.5+45*k)*Math.PI/180;pts.push((500+rv*Math.cos(a)).toFixed(1)+','+(430+rv*Math.sin(a)).toFixed(1));}
     g+='<polygon points="'+pts.join(' ')+'" fill="none" stroke="#b85c46" stroke-width="28" stroke-linejoin="round"/>';
+    g+='<g fill="#6f6a64"><rect x="380" y="'+(430+D-15)+'" width="240" height="30"/><rect x="380" y="'+(430-D-15)+'" width="240" height="30"/>'+
+      '<rect x="'+(500+D-15)+'" y="310" width="30" height="240"/><rect x="'+(500-D-15)+'" y="310" width="30" height="240"/></g>';
     [-9,9].forEach(function(k){
       [430+D+k,430-D+k].forEach(function(y){o+='M380 '+y+'H620';});
       [500+D+k,500-D+k].forEach(function(x){o+='M'+x+' 310V550';});
