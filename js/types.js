@@ -74,21 +74,26 @@ function dashes(h,len,gap,wid,col){
   while(y<h/2-1){var l=Math.min(len,h/2-y);s+='<rect x="'+(-wid/2)+'" y="'+y+'" width="'+wid+'" height="'+l+'" fill="'+col+'"/>';y+=len+gap;}
   return s;
 }
+/* bevoegd persoon in bovenaanzicht; de voorkant (klep van de pet, voeten) wijst naar +y,
+   zodat hij met "Komt van" naar de naderende bestuurder kijkt */
 function agent(arm){
-  var vest='#d4e03a',sleeve='#2a4a86',navy='#1d3566',skin='#f0c29b',s='';
-  s+='<rect x="-17" y="14" width="14" height="48" rx="5" fill="'+navy+'"/><rect x="3" y="14" width="14" height="48" rx="5" fill="'+navy+'"/>';
-  s+='<rect x="-19" y="58" width="18" height="10" rx="4" fill="#111"/><rect x="1" y="58" width="18" height="10" rx="4" fill="#111"/>';
-  s+='<rect x="20" y="-34" width="12" height="46" rx="6" fill="'+sleeve+'"/><circle cx="26" cy="16" r="7" fill="'+skin+'"/>';
-  if(arm==='up'){
-    s+='<rect x="-32" y="-82" width="12" height="52" rx="6" fill="'+sleeve+'"/><rect x="-37" y="-100" width="22" height="22" rx="9" fill="'+skin+'"/>';
+  var vest='#d4e03a',sleeve='#2a4a86',navy='#1d3566',glove='#ffffff',s='';
+  s+='<ellipse cx="-9" cy="13" rx="5" ry="7.5" fill="#111"/><ellipse cx="9" cy="13" rx="5" ry="7.5" fill="#111"/>';
+  if(arm==='side'){
+    s+='<rect x="-64" y="-6" width="44" height="12" rx="6" fill="'+sleeve+'"/><circle cx="-63" cy="0" r="6.5" fill="'+glove+'" stroke="#9aa3a9" stroke-width="1.2"/>';
+    s+='<rect x="20" y="-6" width="44" height="12" rx="6" fill="'+sleeve+'"/><circle cx="63" cy="0" r="6.5" fill="'+glove+'" stroke="#9aa3a9" stroke-width="1.2"/>';
   }else{
-    s+='<rect x="-64" y="-34" width="46" height="12" rx="6" fill="'+sleeve+'"/><circle cx="-62" cy="-28" r="7" fill="'+skin+'"/>';
+    /* linkerarm langs het lichaam; de opgestoken rechterarm zie je als schaduw op de grond en een hand boven de schouder */
+    s+='<ellipse cx="-26" cy="4" rx="5.5" ry="10" fill="'+sleeve+'"/>';
+    s+='<ellipse cx="46" cy="-18" rx="22" ry="6" fill="#000" opacity=".18" transform="rotate(-28 46 -18)"/>';
   }
-  s+='<rect x="-22" y="-38" width="44" height="56" rx="10" fill="'+vest+'"/><rect x="-22" y="-18" width="44" height="6" fill="#e9eef0"/><rect x="-22" y="0" width="44" height="6" fill="#e9eef0"/><rect x="-1.5" y="-38" width="3" height="56" fill="#9aa51a"/>';
-  s+='<rect x="-5" y="-48" width="10" height="12" fill="'+skin+'"/><circle cx="0" cy="-58" r="15" fill="'+skin+'"/>';
-  s+='<path d="M-16 -62Q-16 -80 0 -80Q16 -80 16 -62Z" fill="'+navy+'"/><rect x="-17" y="-64" width="34" height="6" rx="3" fill="#0f1f44"/><rect x="-4" y="-76" width="8" height="6" rx="2" fill="#e5c24a"/>';
-  s+='<rect x="-11" y="-56" width="22" height="6" rx="3" fill="#222"/>';
-  return arm==='up'?'<g transform="translate(2,16)">'+s+'</g>':'<g transform="translate(19,6)">'+s+'</g>';
+  s+='<ellipse cx="0" cy="0" rx="24" ry="13" fill="'+vest+'" stroke="#9aa51a" stroke-width="2"/>';
+  s+='<ellipse cx="0" cy="0" rx="17" ry="8" fill="none" stroke="#eef2f3" stroke-width="3"/>';
+  s+='<circle cx="0" cy="-1" r="11.5" fill="'+navy+'"/><path d="M-9 6Q0 16 9 6Z" fill="#0f1f44"/><rect x="-3" y="1" width="6" height="4" rx="1" fill="#e5c24a"/>';
+  if(arm!=='side'){
+    s+='<circle cx="23" cy="-4" r="8.5" fill="'+sleeve+'"/><circle cx="23" cy="-5" r="7" fill="'+glove+'" stroke="#9aa3a9" stroke-width="1.2"/>';
+  }
+  return '<g transform="scale(1.3)">'+s+'</g>';
 }
 /* pijl op een rijstrookbord */
 function laneArrow(c,x){
@@ -305,8 +310,8 @@ var TYPES={
   kuil:{label:'Put in de weg',kind:'object',w:120,h:80,draw:function(){
     return '<ellipse cx="0" cy="0" rx="56" ry="36" fill="#8f8a82" stroke="#ece8de" stroke-width="3"/><ellipse cx="2" cy="2" rx="44" ry="26" fill="#2b2926"/><ellipse cx="4" cy="4" rx="30" ry="16" fill="#171615"/>';
   }},
-  agent_up:{label:'Bevoegd persoon',kind:'object',w:76,h:170,draw:function(){return agent('up');}},
-  agent_side:{label:'Bevoegd persoon',kind:'object',w:106,h:150,draw:function(){return agent('side');}},
+  agent_up:{label:'Bevoegd persoon',kind:'object',follow:true,onRoad:true,w:100,h:74,draw:function(){return agent('up');}},
+  agent_side:{label:'Bevoegd persoon',kind:'object',follow:true,onRoad:true,w:177,h:58,draw:function(){return agent('side');}},
   tag:{label:'Letter',kind:'object',w:44,h:44,draw:function(it){
     return '<circle r="20" fill="#fff" stroke="#2b2e33" stroke-width="2.5"/><text y="8" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="22" fill="#2b2e33">'+esc(it.text||'A')+'</text>';
   }},
@@ -350,9 +355,10 @@ var TYPES={
   }},
   vlak:{label:'Verdrijvings\u00ADvlak',kind:'mark',w:160,h:260,draw:function(it){
     var p=it.pts||SHAPES[1],bb=vbox(p),id='vc'+(it.id||0),pts=p.map(function(q){return q[0]+','+q[1];}).join(' '),d,w=bb[2]-bb[0],h=bb[3]-bb[1];
-    var s='<clipPath id="'+id+'"><polygon points="'+pts+'"/></clipPath><g clip-path="url(#'+id+')" stroke="'+WHITE+'" stroke-width="12">';
-    for(d=-h;d<=w;d+=34)s+='<line x1="'+(bb[0]+d)+'" y1="'+bb[1]+'" x2="'+(bb[0]+d+h)+'" y2="'+bb[3]+'"/>';
-    return s+'</g><polygon points="'+pts+'" fill="none" stroke="'+WHITE+'" stroke-width="7" stroke-linejoin="miter"/><polygon points="'+pts+'" fill="#000" fill-opacity="0"/>';
+    /* brede schuine strepen (45°) met veel tussenruimte, binnen een volle rand zoals een doorlopende lijn */
+    var s='<clipPath id="'+id+'"><polygon points="'+pts+'"/></clipPath><g clip-path="url(#'+id+')" stroke="'+WHITE+'" stroke-width="18">';
+    for(d=-h;d<=w;d+=90)s+='<line x1="'+(bb[0]+d)+'" y1="'+bb[1]+'" x2="'+(bb[0]+d+h)+'" y2="'+bb[3]+'"/>';
+    return s+'</g><polygon points="'+pts+'" fill="none" stroke="'+WHITE+'" stroke-width="10" stroke-linejoin="miter"/><polygon points="'+pts+'" fill="#000" fill-opacity="0"/>';
   }},
   arrow_s:{label:'Pijl rechtdoor',kind:'mark',follow:true,w:40,h:94,draw:function(){
     return '<path d="M0 -45L17 -15H7V45H-7V-15H-17Z" fill="'+WHITE+'"/>';

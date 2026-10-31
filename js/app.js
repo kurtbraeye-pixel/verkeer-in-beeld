@@ -27,8 +27,10 @@ function applyData(sv){
     if(k==='cross'){
       store.cross.vw=clamp(+s.vw||240,160,720);store.cross.hw=clamp(+s.hw||240,160,640);
       store.cross.arm=ARMS.indexOf(s.arm)>-1?s.arm:null;
+      store.cross.preset=XPRESETS.some(function(p){return p.id===s.preset;})?s.preset:null;
     }else{
       store.road.roadW=clamp(+s.roadW||280,160,760);store.road.orient=s.orient==='h'?'h':'v';
+      store.road.preset=PRESETS.some(function(p){return p.id===s.preset;})?s.preset:null;
     }
   });
   scene=sv.scene==='road'?'road':'cross';
@@ -47,7 +49,7 @@ try{
 /* Ongedaan maken / opnieuw: een momentopname bevat de items én de instellingen van de weg. */
 function settings(){
   var s=store[scene];
-  return scene==='cross'?{vw:s.vw,hw:s.hw,arm:s.arm}:{roadW:s.roadW,orient:s.orient};
+  return scene==='cross'?{vw:s.vw,hw:s.hw,arm:s.arm,preset:s.preset||null}:{roadW:s.roadW,orient:s.orient,preset:s.preset||null};
 }
 function snap(){return JSON.stringify({items:items,set:settings()});}
 function restore(str){
@@ -65,7 +67,7 @@ function tileSvg(entry){
   if(entry.type==='routepijl')tmp.pts=ROUTES[entry.shape==null?1:entry.shape];
   if(def.stretch){tmp.w=def.tw||def.w;tmp.h=def.th||def.h;}
   var b=baseDims(tmp),m=Math.max(b[0],b[1])/2+4,rot=follows(def)?ROT[dir]:0;
-  var bg=def.kind==='mark'?'<rect x="'+(-m)+'" y="'+(-m)+'" width="'+(2*m)+'" height="'+(2*m)+'" rx="'+(m/5)+'" fill="#6f6a64"/>':'';
+  var bg=def.kind==='mark'||def.onRoad?'<rect x="'+(-m)+'" y="'+(-m)+'" width="'+(2*m)+'" height="'+(2*m)+'" rx="'+(m/5)+'" fill="#6f6a64"/>':'';
   return '<svg viewBox="'+(-m)+' '+(-m)+' '+(2*m)+' '+(2*m)+'" aria-hidden="true">'+bg+'<g transform="rotate('+rot+')">'+def.draw(tmp)+'</g></svg>';
 }
 function fillTiles(sec){
@@ -477,7 +479,7 @@ function redo(){
 document.getElementById('bUndo').onclick=undo;
 document.getElementById('bRedo').onclick=redo;
 document.getElementById('bClear').onclick=function(){
-  if(!items.length)return;pushHistory(snap());items=[];store[scene].items=items;selId=null;render();
+  if(!items.length)return;pushHistory(snap());items=[];store[scene].items=items;store[scene].preset=null;selId=null;drawBase();render();
 };
 
 document.addEventListener('keydown',function(e){
@@ -515,6 +517,8 @@ function drawBase(){
   document.getElementById('crossbar').hidden=road;
   drawCross();
   document.getElementById('roadW').value=w;
+  document.getElementById('presetC').value=store.cross.preset||'';
+  document.getElementById('preset').value=roadS.preset||'';
   document.getElementById('oV').className='btn'+(v?' on':'');
   document.getElementById('oH').className='btn'+(v?'':' on');
 }
@@ -581,10 +585,9 @@ document.getElementById('oH').onclick=function(){setOrient('h');};
   XPRESETS.forEach(function(p){var o=document.createElement('option');o.value=p.id;o.textContent=p.label;sel.appendChild(o);});
   sel.addEventListener('change',function(){
     var p=XPRESETS.filter(function(x){return x.id===sel.value;})[0];
-    sel.value='';
-    if(!p||scene!=='cross')return;
+    if(!p||scene!=='cross'){sel.value=store.cross.preset||'';return;}
     pushHistory(snap());
-    store.cross.vw=p.vw;store.cross.hw=p.hw;store.cross.arm=p.arm;
+    store.cross.vw=p.vw;store.cross.hw=p.hw;store.cross.arm=p.arm;store.cross.preset=p.id;
     items=p.build();items.forEach(function(i){i.id=++uid;});
     store.cross.items=items;selId=null;drawBase();renderDpad();render();
   });
@@ -594,11 +597,10 @@ document.getElementById('oH').onclick=function(){setOrient('h');};
   PRESETS.forEach(function(p){var o=document.createElement('option');o.value=p.id;o.textContent=p.label;sel.appendChild(o);});
   sel.addEventListener('change',function(){
     var p=PRESETS.filter(function(x){return x.id===sel.value;})[0];
-    sel.value='';
-    if(!p)return;
+    if(!p){sel.value=roadS.preset||'';return;}
     if(scene!=='road')return;
     pushHistory(snap());
-    roadS.roadW=p.roadW;roadS.orient='v';
+    roadS.roadW=p.roadW;roadS.orient='v';roadS.preset=p.id;
     items=p.build();items.forEach(function(i){i.id=++uid;});
     store.road.items=items;selId=null;drawBase();render();
   });
