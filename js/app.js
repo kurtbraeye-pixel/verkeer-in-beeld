@@ -245,8 +245,8 @@ window.addEventListener('pagehide',saveNow);
 document.addEventListener('visibilitychange',function(){if(document.hidden)saveNow();});
 function handle(cls,mode,x,y,shape){
   var g='<g data-h="'+mode+'" class="'+cls+'" transform="translate('+x+' '+y+')">';
-  if(shape==='sq')return g+'<rect x="-9" y="-9" width="18" height="18" rx="5" fill="#d9682f" stroke="#fff" stroke-width="3"/></g>';
-  return g+'<circle r="14" fill="#d9682f" stroke="#fff" stroke-width="3"/>'+(shape==='rot'?
+  if(shape==='sq')return g+'<rect x="-9" y="-9" width="18" height="18" rx="5" fill="#cc4e06" stroke="#fff" stroke-width="3"/></g>';
+  return g+'<circle r="14" fill="#cc4e06" stroke="#fff" stroke-width="3"/>'+(shape==='rot'?
     '<path d="M-5.5 1.5A6 6 0 1 1 0 6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><path d="M-9.5 -1.5L-5.5 4.5 -1.5 -0.5Z" fill="#fff"/>':
     '<path d="M-5 5L5 -5M5 -5H0M5 -5V0M-5 5H0M-5 5V0" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>')+'</g>';
 }
@@ -256,8 +256,8 @@ function selMarkup(it){
   x0-=8;x1+=8;y0-=8;y1+=8;
   var mx=(x0+x1)/2,my=(y0+y1)/2;
   out='<g transform="translate('+it.x.toFixed(1)+' '+it.y.toFixed(1)+') rotate('+it.rot+')">'+
-    '<rect x="'+x0+'" y="'+y0+'" width="'+(x1-x0)+'" height="'+(y1-y0)+'" rx="6" fill="none" stroke="#d9682f" stroke-width="2.5" stroke-dasharray="8 6" pointer-events="none"/>'+
-    '<line x1="'+mx+'" y1="'+y0+'" x2="'+mx+'" y2="'+(y0-26)+'" stroke="#d9682f" stroke-width="2.5" pointer-events="none"/>';
+    '<rect x="'+x0+'" y="'+y0+'" width="'+(x1-x0)+'" height="'+(y1-y0)+'" rx="6" fill="none" stroke="#cc4e06" stroke-width="2.5" stroke-dasharray="8 6" pointer-events="none"/>'+
+    '<line x1="'+mx+'" y1="'+y0+'" x2="'+mx+'" y2="'+(y0-26)+'" stroke="#cc4e06" stroke-width="2.5" pointer-events="none"/>';
   if(d.stretch){
     if(d.stretch.indexOf('w')>-1)out+=handle('h-w','w+',x1,my,'sq')+handle('h-w','w-',x0,my,'sq');
     if(d.stretch.indexOf('h')>-1)out+=handle('h-h','h+',mx,y1,'sq')+handle('h-h','h-',mx,y0,'sq');
@@ -268,10 +268,10 @@ function selMarkup(it){
     var n=it.pts.length,pp=it.pts,sc=it.s,nm=it.type==='routepijl'?n-1:n;
     for(k=0;k<nm;k++){
       var a=pp[k],b=pp[(k+1)%n];
-      out+='<g data-h="m:'+k+'" class="h-v" transform="translate('+((a[0]+b[0])/2*sc)+' '+((a[1]+b[1])/2*sc)+')"><circle r="7" fill="#fff" stroke="#d9682f" stroke-width="2.5"/><path d="M-3.5 0H3.5M0 -3.5V3.5" stroke="#d9682f" stroke-width="2"/></g>';
+      out+='<g data-h="m:'+k+'" class="h-v" transform="translate('+((a[0]+b[0])/2*sc)+' '+((a[1]+b[1])/2*sc)+')"><circle r="7" fill="#fff" stroke="#cc4e06" stroke-width="2.5"/><path d="M-3.5 0H3.5M0 -3.5V3.5" stroke="#cc4e06" stroke-width="2"/></g>';
     }
     for(k=0;k<n;k++){
-      out+='<g data-h="v:'+k+'" class="h-v" transform="translate('+(pp[k][0]*sc)+' '+(pp[k][1]*sc)+')"><circle r="10" fill="#d9682f" stroke="#fff" stroke-width="3"/></g>';
+      out+='<g data-h="v:'+k+'" class="h-v" transform="translate('+(pp[k][0]*sc)+' '+(pp[k][1]*sc)+')"><circle r="10" fill="#cc4e06" stroke="#fff" stroke-width="3"/></g>';
     }
   }
   return out+'</g>';

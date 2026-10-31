@@ -12,20 +12,22 @@
 [hidden]{display:none!important}
 img{max-width:100%}
 
-/* Layout: smalle materiaalkolom links, groot tekenvlak rechts, werkbalk erboven. */
+/* Layout: smalle materiaalkolom links, groot tekenvlak rechts, werkbalk erboven.
+   Kleuren volgen de huisstijl van Ligo: navy, petrolblauw, oranje en turquoise. */
 :root{
-  --bg:#eef3f5; --panel:#ffffff; --tile:#f3f7f9; --ink:#17323f; --muted:#5d7482;
-  --line:#d0dde4; --accent:#2b6a87; --accent-ink:#ffffff; --warm:#d9682f;
+  --brand:#056181; --brand-ink:#ffffff;
+  --bg:#f5f5f5; --panel:#ffffff; --tile:#eef8f7; --ink:#041c37; --muted:#4d6175;
+  --line:#d4dfe4; --accent:#056181; --accent-ink:#ffffff; --warm:#cc4e06;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0f1a22; --panel:#17252f; --tile:#213542; --ink:#e6eff3; --muted:#93a9b5;
-    --line:#2b4150; --accent:#5fb0d3; --accent-ink:#0b1a22; --warm:#f08a52; color-scheme:dark;
+    --bg:#041c37; --panel:#0a2846; --tile:#113458; --ink:#e7f1f5; --muted:#9db4c5;
+    --line:#1f4368; --accent:#09b9bb; --accent-ink:#041c37; --warm:#f07a3a; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0f1a22; --panel:#17252f; --tile:#213542; --ink:#e6eff3; --muted:#93a9b5;
-  --line:#2b4150; --accent:#5fb0d3; --accent-ink:#0b1a22; --warm:#f08a52; color-scheme:dark;
+  --bg:#041c37; --panel:#0a2846; --tile:#113458; --ink:#e7f1f5; --muted:#9db4c5;
+  --line:#1f4368; --accent:#09b9bb; --accent-ink:#041c37; --warm:#f07a3a; color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -37,8 +39,20 @@ body{
   padding-left:max(16px,env(safe-area-inset-left,0px));
   padding-right:max(16px,env(safe-area-inset-right,0px));
 }
-header{display:flex; align-items:center; gap:16px; flex-wrap:wrap}
+/* Header in Ligo-petrol met een eigen geometrisch patroon dat naar links uitvloeit. */
+header{
+  display:flex; align-items:center; gap:12px 24px; flex-wrap:wrap;
+  padding:12px 18px; border-radius:14px; color:var(--brand-ink);
+  background:linear-gradient(90deg,var(--brand) 30%,rgba(5,97,129,.55) 62%,rgba(5,97,129,0) 100%),url(../icons/pattern.svg) right center/240px 120px repeat-x,var(--brand);
+}
+.brand{display:flex; flex-direction:column; gap:2px; min-width:0}
 h1{font-size:20px; font-weight:600; margin:0; letter-spacing:-.01em; text-wrap:balance}
+.byline{font-size:12.5px; opacity:.9}
+header .seg{border-color:rgba(255,255,255,.45); background:rgba(4,28,55,.25)}
+header .seg button{color:#fff}
+header .seg button+button{border-left-color:rgba(255,255,255,.45)}
+header .seg button.on{background:#fff; color:var(--brand)}
+header :focus-visible{outline-color:#fff}
 .seg{display:inline-flex; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--panel)}
 .seg button{
   font:inherit; font-size:13.5px; padding:8px 16px; border:0; background:transparent; color:var(--ink); cursor:pointer;
@@ -146,5 +160,8 @@ a.btn{text-decoration:none}
   .stage{order:1}
   .palette{order:2; overflow:visible}
   .canvas-wrap{flex:none; aspect-ratio:1000/860}
+  .roadbar label{width:100%; min-width:0}
+  .roadbar select,.roadbar input[type=range]{flex:1; min-width:0; width:auto}
+  .roadbar .push{margin-left:0}
 }
 .laneEd{display:inline-flex;gap:4px}.laneEd[hidden]{display:none}

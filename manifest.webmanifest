@@ -1,14 +1,14 @@
 {
   "name": "Verkeer in beeld",
   "short_name": "Verkeer",
-  "description": "Teken verkeerssituaties op een kruispunt of rechte weg.",
+  "description": "Teken verkeerssituaties op een kruispunt of rechte weg. Door Kurt Braeye, Ligo Midden- en Zuid-West-Vlaanderen.",
   "lang": "nl",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#eef3f5",
-  "theme_color": "#2b6a87",
+  "background_color": "#f5f5f5",
+  "theme_color": "#056181",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },

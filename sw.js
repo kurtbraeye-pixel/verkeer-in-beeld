@@ -2,7 +2,7 @@
    Strategie "stale-while-revalidate": toon meteen de bewaarde versie en haal op de
    achtergrond de nieuwste op; die is er bij de volgende keer openen.
    Verhoog VERSION bij een grote wijziging om oude bestanden meteen op te ruimen. */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = 'verkeer-in-beeld-' + VERSION;
 const FILES = [
   './',
@@ -14,6 +14,7 @@ const FILES = [
   'fonts/lexend-latin.woff2',
   'fonts/lexend-latin-ext.woff2',
   'icons/icon.svg',
+  'icons/pattern.svg',
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/apple-touch-icon.png',
