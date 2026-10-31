@@ -140,7 +140,7 @@ function markSpot(item){
   extra.x=p[0];extra.y=p[1];return extra;
 }
 function countOf(list){return items.filter(function(o){return list.indexOf(o.type)>-1;}).length;}
-var POSTS=['light','stop','yield','priority','endpriority','noentry','ahead','mergesign','mergesign_l','lanesign','workwarn'];
+var POSTS=['light','stop','yield','priority','endpriority','b15a','b15b','b15c','b15d','b15e','b15f','b15g','b17','noentry','ahead','mergesign','mergesign_l','lanesign','workwarn'];
 function postsFacing(rot){return items.filter(function(o){return POSTS.indexOf(o.type)>-1&&o.rot===rot;}).length;}
 function objectSpot(item){
   var t=item.type;
@@ -311,7 +311,7 @@ function updateToolbar(it){
   document.getElementById('bShape').hidden=!(it&&isPts(it));
   buildLaneEd(it);
   var lab='Niets gekozen';
-  if(it){lab=(it.type==='agent_up'||it.type==='agent_side')?'Bevoegd persoon':(it.type==='lanesign'?'Rijstrookbord':TYPES[it.type].label);}
+  if(it){lab=(it.type==='agent_up'||it.type==='agent_side')?'Bevoegd persoon':(it.type==='lanesign'?'Rijstrookbord (F13)':TYPES[it.type].label.replace(/\u00AD/g,''));}
   document.getElementById('selLabel').textContent=lab;
   document.getElementById('bUndo').disabled=undoStack.length===0;
   document.getElementById('bRedo').disabled=redoStack.length===0;

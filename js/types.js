@@ -121,10 +121,22 @@ function arrowMR(){
 function arrowTurn(){
   return '<g transform="translate(-19,0)"><path d="M0 45V-8Q0 -22 14 -22H20" fill="none" stroke="'+WHITE+'" stroke-width="13" stroke-linejoin="round"/><polygon points="18,-42 46,-22 18,-2" fill="'+WHITE+'"/></g>';
 }
+var FBLUE='#1f66ae';
+/* F97b (rechter rijstrook valt weg): pijl in de linker strook, de rechter strook buigt erin; F97 = gespiegeld */
 function mergePlate(){
-  return '<rect x="-22" y="-81" width="44" height="68" rx="5" fill="#22558c" stroke="#fff" stroke-width="2.5"/>'+
-    '<rect x="-19.5" y="-78.5" width="39" height="63" rx="3" fill="none" stroke="#fff" stroke-width="0.9"/>'+
-    '<polygon points="-8.4,-73.2 -0.5,-60.9 -5.5,-60.9 -5.5,-48 16.3,-36 16.3,-19.7 10.7,-19.7 10.7,-32.3 -5.5,-41.2 -5.5,-19.5 -11.2,-19.5 -11.2,-60.9 -16.3,-60.9" fill="#fff"/>';
+  return '<rect x="-22" y="-81" width="44" height="68" rx="5" fill="'+FBLUE+'" stroke="#fff" stroke-width="2.5"/>'+
+    '<rect x="-18.5" y="-77.5" width="37" height="61" rx="3" fill="none" stroke="#fff" stroke-width="1.6"/>'+
+    '<path d="M9 -17V-33L-6 -47" fill="none" stroke="#fff" stroke-width="8" stroke-linejoin="miter"/>'+
+    '<rect x="-10" y="-58" width="8" height="41" fill="#fff"/><polygon points="-17,-57 5,-57 -6,-73" fill="#fff"/>';
+}
+/* driehoekig bord met rode rand (gevaarsborden, B15, B17) */
+function warnPlate(inner){
+  return '<polygon points="0,-84 36,-20 -36,-20" fill="#f4f4f1" stroke="#d3202a" stroke-width="10" stroke-linejoin="round"/>'+inner;
+}
+/* B15: voorrang op de kruisende zijweg(en); de hoofdweg is de brede balk met punt */
+var B15SIDE={a:'M-15 -44H15',b:'M-1 -40L-14 -31',c:'M-15 -44H0',d:'M-1 -49L-10 -55',e:'M1 -49L10 -55',f:'M0 -44H15',g:'M1 -40L14 -31'};
+function b15(v){
+  return warnPlate('<polygon points="-7.5,-27 7.5,-27 5.5,-57 0,-65 -5.5,-57" fill="#111"/><path d="'+B15SIDE[v]+'" stroke="#111" stroke-width="7" fill="none"/>');
 }
 function hazard(pts){
   return pts.map(function(q){return '<circle cx="'+q[0]+'" cy="'+q[1]+'" r="9" fill="#ffb000" opacity=".35"/><circle cx="'+q[0]+'" cy="'+q[1]+'" r="4.5" fill="#ff9f00" stroke="#fff" stroke-width="1.2"/>';}).join('');
@@ -253,17 +265,29 @@ var TYPES={
     });
     return s;
   }},
-  stop:{label:'Stopbord',kind:'object',follow:true,w:68,h:150,draw:function(){
-    return signWrap('<polygon points="'+octagon(33,-45)+'" fill="#fff"/><polygon points="'+octagon(29,-45)+'" fill="#d3202a"/><text x="0" y="-39" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="17" fill="#fff">STOP</text>');
+  stop:{label:'Stop (B5)',kind:'object',follow:true,w:68,h:150,draw:function(){
+    /* smalle, hoge letters die het bord vullen, zoals op het officiële B5-bord */
+    return signWrap('<polygon points="'+octagon(33,-45)+'" fill="#fff" stroke="#c9ccce" stroke-width="1"/><polygon points="'+octagon(30,-45)+'" fill="#d3202a"/>'+
+      '<text x="0" y="-37.5" text-anchor="middle" font-family="Arial Narrow,Helvetica Neue,Arial,Helvetica,sans-serif" font-weight="700" font-size="22" textLength="46" lengthAdjust="spacingAndGlyphs" fill="#fff">STOP</text>');
   }},
-  yield:{label:'Geef voorrang',kind:'object',follow:true,w:68,h:150,draw:function(){
+  b15a:{label:'Voorrang op kruisende zijwegen (B15a)',kind:'object',follow:true,w:80,h:150,draw:function(){return signWrap(b15('a'));}},
+  b15b:{label:'Zijweg schuin links (B15b)',kind:'object',follow:true,w:80,h:150,draw:function(){return signWrap(b15('b'));}},
+  b15c:{label:'Zijweg links (B15c)',kind:'object',follow:true,w:80,h:150,draw:function(){return signWrap(b15('c'));}},
+  b15d:{label:'Zijweg schuin links voor (B15d)',kind:'object',follow:true,w:80,h:150,draw:function(){return signWrap(b15('d'));}},
+  b15e:{label:'Zijweg schuin rechts voor (B15e)',kind:'object',follow:true,w:80,h:150,draw:function(){return signWrap(b15('e'));}},
+  b15f:{label:'Zijweg rechts (B15f)',kind:'object',follow:true,w:80,h:150,draw:function(){return signWrap(b15('f'));}},
+  b15g:{label:'Zijweg schuin rechts (B15g)',kind:'object',follow:true,w:80,h:150,draw:function(){return signWrap(b15('g'));}},
+  b17:{label:'Voorrang van rechts (B17)',kind:'object',follow:true,w:80,h:150,draw:function(){
+    return signWrap(warnPlate('<path d="M-10 -53L10 -33M10 -53L-10 -33" stroke="#111" stroke-width="7.5" fill="none"/>'));
+  }},
+  yield:{label:'Voorrang verlenen (B1)',kind:'object',follow:true,w:68,h:150,draw:function(){
     return signWrap('<polygon points="-26,-62 26,-62 0,-17" fill="#fff" stroke="#d3202a" stroke-width="9" stroke-linejoin="round"/>');
   }},
-  priority:{label:'Voorrangsweg',kind:'object',follow:true,w:68,h:150,draw:function(){
+  priority:{label:'Voorrangsweg (B9)',kind:'object',follow:true,w:68,h:150,draw:function(){
     return signWrap('<polygon points="0,-81 36,-45 0,-9 -36,-45" fill="#fff" stroke="#111" stroke-width="2.6" stroke-linejoin="round"/>'+
       '<polygon points="0,-68 23,-45 0,-22 -23,-45" fill="#e8801a" stroke="#111" stroke-width="1.6" stroke-linejoin="miter"/>');
   }},
-  endpriority:{label:'Einde voorrangsweg',kind:'object',follow:true,w:68,h:150,draw:function(){
+  endpriority:{label:'Einde voorrangsweg (B11)',kind:'object',follow:true,w:68,h:150,draw:function(){
     return signWrap('<defs><clipPath id="epc"><polygon points="600,70 1130,600 600,1130 70,600"/></clipPath></defs>'+
       '<g transform="translate(0,-45) scale(0.066) translate(-600,-600)">'+
       '<polygon points="600,60 1140,600 600,1140 60,600" fill="#fff"/>'+
@@ -271,23 +295,23 @@ var TYPES={
       '<g fill="#e8801a" stroke="#111" stroke-width="24" stroke-linejoin="miter"><polygon points="270,600 600,270 710,380 380,710"/><polygon points="930,600 600,930 490,820 820,490"/></g>'+
       '<polygon points="600,60 1140,600 600,1140 60,600" fill="none" stroke="#111" stroke-width="32" stroke-linejoin="round"/></g>');
   }},
-  noentry:{label:'Verboden toegang',kind:'object',follow:true,w:68,h:150,draw:function(){
+  noentry:{label:'Verboden richting (C1)',kind:'object',follow:true,w:68,h:150,draw:function(){
     return signWrap('<circle cx="0" cy="-45" r="31" fill="#d3202a" stroke="#fff" stroke-width="3"/><rect x="-21" y="-51" width="42" height="12" rx="2" fill="#fff"/>');
   }},
-  ahead:{label:'Rechtdoor (verplicht)',kind:'object',follow:true,w:68,h:150,draw:function(){
+  ahead:{label:'Verplicht rechtdoor (D1)',kind:'object',follow:true,w:68,h:150,draw:function(){
     return signWrap('<circle cx="0" cy="-45" r="31" fill="#1b6ec2" stroke="#fff" stroke-width="3"/><path d="M0 -68L15 -47H6V-24H-6V-47H-15Z" fill="#fff"/>');
   }},
-  mergesign:{label:'Vermindering rechts',kind:'object',follow:true,w:48,h:150,draw:function(){return signWrap(mergePlate());}},
-  mergesign_l:{label:'Vermindering links',kind:'object',follow:true,w:48,h:150,draw:function(){return signWrap(mirror(mergePlate()));}},
-  lanesign:{label:'Rijstrookbord',kind:'object',follow:true,w:112,h:150,wf:function(it){return (it.lanes||['s','s']).length*30+14;},draw:function(it){
+  mergesign:{label:'Rijstrook\u00ADversmalling rechts (F97b)',kind:'object',follow:true,w:48,h:150,draw:function(){return signWrap(mergePlate());}},
+  mergesign_l:{label:'Rijstrook\u00ADversmalling links (F97)',kind:'object',follow:true,w:48,h:150,draw:function(){return signWrap(mirror(mergePlate()));}},
+  lanesign:{label:'Rijstrookbord (F13)',kind:'object',follow:true,w:112,h:150,wf:function(it){return (it.lanes||['s','s']).length*30+14;},draw:function(it){
     var L=it.lanes||['s','s'],n=L.length,Wd=n*30+14,s='',i,x0=-Wd/2;
-    s+='<rect x="'+x0+'" y="-86" width="'+Wd+'" height="74" rx="7" fill="#22558c" stroke="#fff" stroke-width="3"/>';
+    s+='<rect x="'+x0+'" y="-86" width="'+Wd+'" height="74" rx="7" fill="'+FBLUE+'" stroke="#fff" stroke-width="3"/>';
     s+='<rect x="'+(x0+3.5)+'" y="-82.5" width="'+(Wd-7)+'" height="67" rx="4.5" fill="none" stroke="#fff" stroke-width="1"/>';
     for(i=1;i<n;i++)s+='<line x1="'+(x0+7+i*30)+'" y1="-17" x2="'+(x0+7+i*30)+'" y2="-81" stroke="#fff" stroke-width="2" '+(it.solid?'':'stroke-dasharray="7 5" ')+'/>';
     for(i=0;i<n;i++)s+=laneArrow(L[i],x0+7+15+i*30);
     return signWrap(s);
   }},
-  workwarn:{label:'Wegenwerken',kind:'object',follow:true,w:72,h:150,draw:function(){
+  workwarn:{label:'Werken (A31)',kind:'object',follow:true,w:72,h:150,draw:function(){
     return signWrap('<g transform="translate(0,-18) scale(0.072) translate(-605,-1020)">'+
       '<polygon points="610,70 75,975 1135,975" fill="#c0281f" stroke="#c0281f" stroke-width="95" stroke-linejoin="round"/>'+
       '<polygon points="610,190 200,900 1020,900" fill="#f1f1ef"/>'+
@@ -421,8 +445,13 @@ var LANEMARKS=['stopline','sharks','arrow_s','arrow_r','arrow_l','arrow_sr','arr
 var SECTIONS=[
   {el:'t-veh',entries:[{type:'car'},{type:'bus'},{type:'truck'},{type:'bike'},{type:'ambulance'},{type:'police'},{type:'fire'},{type:'ped'}]},
   {el:'t-light',entries:[{type:'light',state:'red',label:'Rood'},{type:'light',state:'orange',label:'Oranje'},{type:'light',state:'green',label:'Groen'}]},
-  {el:'t-sign',entries:[{type:'stop'},{type:'yield'},{type:'priority'},{type:'endpriority'},{type:'noentry'},{type:'ahead'},{type:'mergesign'},{type:'mergesign_l'},
-    {type:'lanesign',lanes:['l','s'],label:'Rijstrookbord'},{type:'lanesign',lanes:['s','r'],label:'Rijstrookbord'},{type:'lanesign',lanes:['l','s','r'],label:'Rijstrookbord'},{type:'lanesign',lanes:['s','s','s','r'],label:'Rijstrookbord'},{type:'lanesign',lanes:['s','s','r'],label:'Rijstrookbord'},{type:'lanesign',lanes:['l','s','s'],label:'Rijstrookbord'},{type:'lanesign',lanes:['s','s'],label:'Rijstrookbord'}]},
+  /* verkeersborden per reeks, zoals de officiële indeling (A gevaar, B voorrang, C verbod, D gebod, F aanwijzing) */
+  {el:'t-sign-a',entries:[{type:'workwarn'}]},
+  {el:'t-sign-b',entries:[{type:'yield'},{type:'stop'},{type:'priority'},{type:'endpriority'},{type:'b15a'},{type:'b15b'},{type:'b15c'},{type:'b15d'},{type:'b15e'},{type:'b15f'},{type:'b15g'},{type:'b17'}]},
+  {el:'t-sign-c',entries:[{type:'noentry'}]},
+  {el:'t-sign-d',entries:[{type:'ahead'}]},
+  {el:'t-sign-f',entries:[{type:'mergesign'},{type:'mergesign_l'},
+    {type:'lanesign',lanes:['l','s'],label:'Rijstrookbord (F13)'},{type:'lanesign',lanes:['s','r'],label:'Rijstrookbord (F13)'},{type:'lanesign',lanes:['l','s','r'],label:'Rijstrookbord (F13)'},{type:'lanesign',lanes:['s','s','s','r'],label:'Rijstrookbord (F13)'},{type:'lanesign',lanes:['s','s','r'],label:'Rijstrookbord (F13)'},{type:'lanesign',lanes:['l','s','s'],label:'Rijstrookbord (F13)'},{type:'lanesign',lanes:['s','s'],label:'Rijstrookbord (F13)'}]},
   {el:'t-mark',entries:[{type:'solid'},{type:'dashed'},{type:'ydashed'},{type:'stopline'},{type:'sharks'},{type:'zebra'},{type:'vlak'},
     {type:'arrow_s'},{type:'arrow_r'},{type:'arrow_l'},{type:'arrow_sr'},{type:'arrow_sl'},{type:'arrow_mr'},{type:'arrow_ml'}]},
   {el:'t-berm',entries:[{type:'midberm'},{type:'grasberm'},{type:'verhardeberm'},{type:'stoep'},{type:'fietspad'},{type:'parkeer'},{type:'asfalt'}]},
