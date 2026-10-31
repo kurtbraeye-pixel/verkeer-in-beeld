@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>Verkeer in beeld</title>
-  <meta name="description" content="Teken verkeerssituaties op een kruispunt of rechte weg: weggebruikers, borden, verkeerslichten en wegmarkeringen. Bewaar ze als afbeelding voor je les.">
+  <meta name="description" content="Teken verkeerssituaties op een kruispunt, rechte weg of rotonde: weggebruikers, borden, verkeerslichten en wegmarkeringen. Bewaar ze als afbeelding voor je les.">
   <meta name="theme-color" content="#056181">
   <meta name="author" content="Kurt Braeye, Ligo Midden- en Zuid-West-Vlaanderen">
   <meta property="og:title" content="Verkeer in beeld">
@@ -39,6 +39,7 @@
         <details class="sec sub" data-sec="sign-b" open><summary>Voorrangsborden (B)</summary><div class="tiles" id="t-sign-b"></div></details>
         <details class="sec sub" data-sec="sign-c"><summary>Verbodsborden (C)</summary><div class="tiles" id="t-sign-c"></div></details>
         <details class="sec sub" data-sec="sign-d"><summary>Gebodsborden (D)</summary><div class="tiles" id="t-sign-d"></div></details>
+        <details class="sec sub" data-sec="sign-e"><summary>Parkeer- en stilstaanborden (E)</summary><div class="tiles" id="t-sign-e"></div></details>
         <details class="sec sub" data-sec="sign-f"><summary>Aanwijzingsborden (F)</summary><div class="tiles" id="t-sign-f"></div></details>
       </div>
     </details>
@@ -55,6 +56,7 @@
     <div class="tabs" role="group" aria-label="Situatie">
       <button type="button" id="sCross" class="on">Kruispunt</button>
       <button type="button" id="sRoad">Rechte weg</button>
+      <button type="button" id="sRound">Rotonde</button>
     </div>
     <div class="roadbar" id="crossbar">
       <div class="grp">
@@ -84,30 +86,46 @@
         <select id="preset"><option value="">Kies een situatie…</option></select>
       </label>
     </div>
+    <div class="roadbar" id="roundbar" hidden>
+      <label for="roundR">Grootte van de rotonde <input type="range" id="roundR" min="200" max="300" step="10" value="250"></label>
+      <label for="roundBike">Fietspad
+        <select id="roundBike">
+          <option value="">geen</option>
+          <option value="ring">op de rotonde (rondom)</option>
+          <option value="apart">apart, buiten de rotonde</option>
+        </select>
+      </label>
+      <label class="push" for="presetR">Voorbeeld
+        <select id="presetR"><option value="">Kies een situatie…</option></select>
+      </label>
+    </div>
    </div>
     <div class="toolbar">
-      <div class="grp">
-        <span class="sellabel" id="selLabel">Niets gekozen</span>
-        <button class="btn" id="bSmall" type="button" title="Kleiner (-)">− Kleiner</button>
-        <button class="btn" id="bBig" type="button" title="Groter (+)">+ Groter</button>
-        <button class="btn" id="bRotL" type="button" title="Draai links">↺ Links</button>
-        <button class="btn" id="bRotR" type="button" title="Draai rechts">↻ Rechts</button>
-        <button class="btn" id="bFlip" type="button" title="Spiegel links-rechts">⇋ Spiegel</button>
+      <!-- knoppen voor het gekozen onderdeel: alleen zichtbaar als er iets gekozen is -->
+      <div class="grp seltools" id="selTools" hidden>
+        <span class="sellabel" id="selLabel"></span>
+        <button class="btn icon" id="bSmall" type="button" title="Kleiner (−)" aria-label="Kleiner">−</button>
+        <button class="btn icon" id="bBig" type="button" title="Groter (+)" aria-label="Groter">+</button>
+        <button class="btn icon" id="bRotL" type="button" title="Draai naar links" aria-label="Draai naar links">↺</button>
+        <button class="btn icon" id="bRotR" type="button" title="Draai naar rechts" aria-label="Draai naar rechts">↻</button>
         <button class="btn" id="bLight" type="button" hidden>Ander licht</button>
         <button class="btn" id="bBeacon" type="button" hidden title="Zwaailicht aan of uit (prioritair of niet)">Zwaailicht uit</button>
+        <button class="btn" id="bSpeed" type="button" hidden title="Andere maximumsnelheid">Andere snelheid</button>
         <span id="laneEd" class="laneEd" hidden></span>
         <button class="btn" id="bLine" type="button" hidden title="Rijstrooklijnen onderbroken of volledig">Lijnen: onderbroken / vol</button>
         <button class="btn" id="bShape" type="button" hidden title="Wissel tussen enkele standaardvormen">Andere vorm</button>
-        <button class="btn" id="bDup" type="button">Kopie</button>
-        <button class="btn danger" id="bDel" type="button" title="Verwijder (Delete)">Verwijder</button>
+        <button class="btn" id="bDup" type="button" title="Kopie maken">Kopie</button>
+        <button class="btn danger" id="bDel" type="button" title="Verwijderen (Delete)">Verwijder</button>
       </div>
+      <span class="tip" id="selTip">Klik op een onderdeel in de tekening om het aan te passen.</span>
       <div class="grp end">
-        <button class="btn" id="bUndo" type="button" title="Ongedaan maken (Ctrl+Z)">↶ Ongedaan</button>
-        <button class="btn" id="bRedo" type="button" title="Opnieuw (Ctrl+Shift+Z)">↷ Opnieuw</button>
-        <button class="btn danger" id="bClear" type="button">Alles wissen</button>
-        <button class="btn" id="bImport" type="button" title="Een bewaarde tekening (.json) openen">Tekening openen</button>
-        <button class="btn" id="bExport" type="button" title="Beide tekeningen bewaren als bestand (.json)">Tekening bewaren</button>
-        <button class="btn primary" id="bSave" type="button">Opslaan als afbeelding</button>
+        <button class="btn icon" id="bUndo" type="button" title="Ongedaan maken (Ctrl+Z)" aria-label="Ongedaan maken">↶</button>
+        <button class="btn icon" id="bRedo" type="button" title="Opnieuw (Ctrl+Shift+Z)" aria-label="Opnieuw">↷</button>
+        <button class="btn danger" id="bClear" type="button" title="Alles wissen">Wissen</button>
+        <button class="btn" id="bImport" type="button" title="Een werkbestand (.json) openen">Openen</button>
+        <button class="btn" id="bSave" type="button" title="Opslaan als afbeelding of als werkbestand">Opslaan</button>
+        <button class="btn" id="bSheet" type="button" title="Werkblad met meerkeuzevraag afdrukken">Werkblad</button>
+        <button class="btn primary" id="bPresent" type="button" title="Presentatiemodus voor het digibord">▶ Presenteren</button>
         <input type="file" id="fileIn" accept=".json,application/json" hidden>
       </div>
     </div>
@@ -126,6 +144,7 @@
           <g id="cStroke" stroke="#b7a578" stroke-width="6" stroke-linejoin="round" fill="#dccda6"></g>
           <g id="cFill" stroke="none" fill="url(#paving)"></g>
         </g>
+        <g id="base-round" display="none"></g>
         <g id="base-road" display="none">
           <rect width="1000" height="860" fill="#93c9a4"/>
           <rect id="rAsph" x="360" y="0" width="280" height="860" fill="#6f6a64"/>
@@ -134,20 +153,21 @@
         <g id="sel"></g>
       </svg>
       <div class="hint" id="hint">Klik op iets in de lijst, of sleep het naar het tekenvlak.</div>
+      <div class="presbar" id="presbar">
+        <button class="btn icon" id="pPrev" type="button" title="Vorig voorbeeld (←)" aria-label="Vorig voorbeeld">◀</button>
+        <span id="pLabel"></span>
+        <button class="btn icon" id="pNext" type="button" title="Volgend voorbeeld (→)" aria-label="Volgend voorbeeld">▶</button>
+        <button class="btn" id="pExit" type="button" title="Presentatie stoppen (Esc)">Stoppen</button>
+      </div>
     </div>
   </div>
 </main>
 
-<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-label="Afbeelding">
-  <div class="card">
-    <p id="modalMsg"></p>
-    <img id="modalImg" alt="Tekening als afbeelding">
-    <div class="row">
-      <a class="btn primary" id="modalDownload" href="#" download>Downloaden</a>
-      <button class="btn" id="modalClose" type="button">Sluiten</button>
-    </div>
-  </div>
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="card" id="modalCard"></div>
 </div>
+<div class="toast" id="toast" role="status" hidden></div>
+<div id="print" aria-hidden="true"></div>
 
 <noscript><p style="padding:16px">Deze app heeft JavaScript nodig.</p></noscript>
 </body>

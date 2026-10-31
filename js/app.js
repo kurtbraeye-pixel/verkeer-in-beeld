@@ -1,15 +1,15 @@
 /* De app zelf: toestand, materiaalpaneel, tekenvlak, werkbalk, opslaan en exporteren. */
 import {
   W,H,CX,CY,ROT,ARROW,DIRLABEL,COLORS,SVGNS,SHAPES,ROUTES,
-  TYPES,SECTIONS,ENTRY,LINES,BERMS,LANEMARKS,
+  TYPES,SECTIONS,ENTRY,LINES,BERMS,LANEMARKS,POSTS,
   copyPts,isPts,vbox,normV,follows,baseDims,dims,clamp,sanitizeItem
 } from './types.js';
-import {PRESETS,XPRESETS} from './presets.js';
+import {PRESETS,XPRESETS,RPRESETS} from './presets.js';
 
 function renderTiles(){SECTIONS.forEach(fillTiles);}
 
 var svg=document.getElementById('scene'),layer=document.getElementById('items'),selLayer=document.getElementById('sel');
-var store={cross:{items:[],vw:240,hw:240,arm:null},road:{items:[],roadW:280,orient:'v'}},scene='cross';
+var store={cross:{items:[],vw:240,hw:240,arm:null},road:{items:[],roadW:280,orient:'v'},round:{items:[],R:250,bike:''}},scene='cross';
 var items=store.cross.items,roadS=store.road;
 var selId=null,uid=0,undoStack=[],redoStack=[],dir='bottom',curColor=COLORS[0],drag=null;
 var KEY='kruispunt-bouwer-v2';
@@ -20,7 +20,7 @@ var ARMS=['top','bottom','left','right'];
 function applyData(sv){
   if(!sv||typeof sv!=='object'||!sv.store||typeof sv.store!=='object')return false;
   uid=0;
-  ['cross','road'].forEach(function(k){
+  ['cross','road','round'].forEach(function(k){
     var s=sv.store[k]||{};
     store[k].items=(Array.isArray(s.items)?s.items:[]).map(sanitizeItem).filter(Boolean);
     store[k].items.forEach(function(i){i.id=++uid;});
@@ -28,28 +28,26 @@ function applyData(sv){
       store.cross.vw=clamp(+s.vw||240,160,720);store.cross.hw=clamp(+s.hw||240,160,640);
       store.cross.arm=ARMS.indexOf(s.arm)>-1?s.arm:null;
       store.cross.preset=XPRESETS.some(function(p){return p.id===s.preset;})?s.preset:null;
-    }else{
+    }else if(k==='road'){
       store.road.roadW=clamp(+s.roadW||280,160,760);store.road.orient=s.orient==='h'?'h':'v';
       store.road.preset=PRESETS.some(function(p){return p.id===s.preset;})?s.preset:null;
+    }else{
+      store.round.R=clamp(+s.R||250,200,300);store.round.bike=s.bike===true?'apart':(['ring','apart'].indexOf(s.bike)>-1?s.bike:'');
+      store.round.preset=RPRESETS.some(function(p){return p.id===s.preset;})?s.preset:null;
     }
   });
-  scene=sv.scene==='road'?'road':'cross';
+  scene=['road','round'].indexOf(sv.scene)>-1?sv.scene:'cross';
   items=store[scene].items;
   return true;
 }
-try{
-  var sv=JSON.parse(localStorage.getItem(KEY)||'null');
-  if(!sv){
-    var old=JSON.parse(localStorage.getItem('kruispunt-bouwer-v1')||'null');
-    if(old&&Array.isArray(old.items))sv={scene:'cross',store:{cross:{items:old.items}}};
-  }
-  applyData(sv);
-}catch(e){}
+try{applyData(JSON.parse(localStorage.getItem(KEY)||'null'));}catch(e){}
 
 /* Ongedaan maken / opnieuw: een momentopname bevat de items én de instellingen van de weg. */
 function settings(){
   var s=store[scene];
-  return scene==='cross'?{vw:s.vw,hw:s.hw,arm:s.arm,preset:s.preset||null}:{roadW:s.roadW,orient:s.orient,preset:s.preset||null};
+  if(scene==='cross')return {vw:s.vw,hw:s.hw,arm:s.arm,preset:s.preset||null};
+  if(scene==='road')return {roadW:s.roadW,orient:s.orient,preset:s.preset||null};
+  return {R:s.R,bike:s.bike||'',preset:s.preset||null};
 }
 function snap(){return JSON.stringify({items:items,set:settings()});}
 function restore(str){
@@ -100,13 +98,17 @@ document.getElementById('sw').addEventListener('click',function(e){
 });
 
 /* ---------- plaatsen ---------- */
-function G(){var c=store.cross;return {hv:c.vw/2,hh:c.hw/2};}
+/* hv/hh: halve breedte van de verticale/horizontale weg; ey/ex: afstand van het midden tot waar die arm begint */
+function G(){
+  if(scene==='round')return {hv:120,hh:120,ey:store.round.R,ex:store.round.R};
+  var c=store.cross;return {hv:c.vw/2,hh:c.hw/2,ey:c.hw/2,ex:c.vw/2};
+}
 function vehicleSpot(item){
   var g=G(),len=TYPES[item.type].h,B={
-    bottom:{x:CX+g.hv/2,y:CY+g.hh+82+len/2,vx:0,vy:1,lx:1,ly:0},
-    top:{x:CX-g.hv/2,y:CY-g.hh-82-len/2,vx:0,vy:-1,lx:-1,ly:0},
-    left:{x:CX-g.hv-82-len/2,y:CY+g.hh/2,vx:-1,vy:0,lx:0,ly:1},
-    right:{x:CX+g.hv+82+len/2,y:CY-g.hh/2,vx:1,vy:0,lx:0,ly:-1}
+    bottom:{x:CX+g.hv/2,y:CY+g.ey+82+len/2,vx:0,vy:1,lx:1,ly:0},
+    top:{x:CX-g.hv/2,y:CY-g.ey-82-len/2,vx:0,vy:-1,lx:-1,ly:0},
+    left:{x:CX-g.ex-82-len/2,y:CY+g.hh/2,vx:-1,vy:0,lx:0,ly:1},
+    right:{x:CX+g.ex+82+len/2,y:CY-g.hh/2,vx:1,vy:0,lx:0,ly:-1}
   }[dir];
   var off=item.type==='bike'?32:0,x,y;
   for(var k=0;k<6;k++){
@@ -116,22 +118,24 @@ function vehicleSpot(item){
   }
   return {x:x,y:y};
 }
-function lanePos(dd,g){return {bottom:[CX+g.hv/2,0],top:[CX-g.hv/2,0],left:[0,CY+g.hh/2],right:[0,CY-g.hh/2]}[dd];}
 function sideMark(dist){return function(){var g=G();return {
-  bottom:[CX+g.hv/2,CY+g.hh+dist],top:[CX-g.hv/2,CY-g.hh-dist],left:[CX-g.hv-dist,CY+g.hh/2],right:[CX+g.hv+dist,CY-g.hh/2]};};}
+  bottom:[CX+g.hv/2,CY+g.ey+dist],top:[CX-g.hv/2,CY-g.ey-dist],left:[CX-g.ex-dist,CY+g.hh/2],right:[CX+g.ex+dist,CY-g.hh/2]};};}
+function across(dist){return function(){var g=G();return {bottom:[CX,CY+g.ey+dist],top:[CX,CY-g.ey-dist],left:[CX-g.ex-dist,CY],right:[CX+g.ex+dist,CY]};};}
 var MARKPOS={
-  zebra:function(){var g=G();return {bottom:[CX,CY+g.hh+30],top:[CX,CY-g.hh-30],left:[CX-g.hv-30,CY],right:[CX+g.hv+30,CY]};},
+  zebra:across(30),
+  fietsoversteek:across(90),
   stopline:sideMark(71),
   sharks:sideMark(60),
+  opstelvak:sideMark(140),
   arrow_s:sideMark(170),
-  dashed:function(){var g=G();return {bottom:[CX,CY+g.hh+170],top:[CX,CY-g.hh-170],left:[CX-g.hv-100,CY],right:[CX+g.hv+100,CY]};}
+  dashed:function(){var g=G();return {bottom:[CX,CY+g.ey+170],top:[CX,CY-g.ey-170],left:[CX-g.ex-100,CY],right:[CX+g.ex+100,CY]};}
 };
-MARKPOS.arrow_r=MARKPOS.arrow_l=MARKPOS.arrow_sr=MARKPOS.arrow_sl=MARKPOS.arrow_mr=MARKPOS.arrow_ml=MARKPOS.arrow_s;
+MARKPOS.arrow_r=MARKPOS.arrow_l=MARKPOS.arrow_sr=MARKPOS.arrow_sl=MARKPOS.arrow_mr=MARKPOS.arrow_ml=MARKPOS.bikesym=MARKPOS.arrow_s;
 MARKPOS.solid=MARKPOS.ydashed=MARKPOS.tsolid=MARKPOS.tdashed=MARKPOS.dashed;
 function markSpot(item){
   var g=G(),p=MARKPOS[item.type]()[dir],v={bottom:[0,1],top:[0,-1],left:[-1,0],right:[1,0]}[dir],len=TYPES[item.type].h,extra={};
-  if(item.type==='zebra')extra.w=(dir==='bottom'||dir==='top')?g.hv*2:g.hh*2;
-  if(item.type==='stopline'||item.type==='sharks')extra.w=Math.max(60,((dir==='bottom'||dir==='top')?g.hv:g.hh)-12);
+  if(item.type==='zebra'||item.type==='fietsoversteek')extra.w=(dir==='bottom'||dir==='top')?g.hv*2:g.hh*2;
+  if(item.type==='stopline'||item.type==='sharks'||item.type==='opstelvak')extra.w=Math.max(60,((dir==='bottom'||dir==='top')?g.hv:g.hh)-12);
   for(var k=0;k<5;k++){
     var xx=p[0]+v[0]*k*(len+14),yy=p[1]+v[1]*k*(len+14);
     var busy=items.some(function(o){return o.type===item.type&&Math.hypot(o.x-xx,o.y-yy)<20;});
@@ -140,21 +144,20 @@ function markSpot(item){
   extra.x=p[0];extra.y=p[1];return extra;
 }
 function countOf(list){return items.filter(function(o){return list.indexOf(o.type)>-1;}).length;}
-var POSTS=['light','stop','yield','priority','endpriority','b15a','b15b','b15c','b15d','b15e','b15f','b15g','b17','noentry','ahead','mergesign','mergesign_l','lanesign','workwarn'];
 function postsFacing(rot){return items.filter(function(o){return POSTS.indexOf(o.type)>-1&&o.rot===rot;}).length;}
 function objectSpot(item){
   var t=item.type;
   if(['agent_up','agent_side','barrier','cone','tag'].indexOf(t)>-1){return {x:CX+countOf([t])*44,y:CY};}
   var g=G();
-  if(t==='ped'||t==='cyclist'){
+  if(t==='ped'){
     /* op het voetpad links van de rijbaan (rechts staan de borden); elke volgende voetganger iets verder terug */
-    var j=items.filter(function(o){return (o.type==='ped'||o.type==='cyclist')&&o.rot===ROT[dir];}).length*60,e=190+j;
-    var Q={bottom:[CX-g.hv-30,CY+g.hh+e],top:[CX+g.hv+30,CY-g.hh-e],left:[CX-g.hv-e,CY-g.hh-30],right:[CX+g.hv+e,CY+g.hh+30]}[dir];
+    var j=items.filter(function(o){return o.type==='ped'&&o.rot===ROT[dir];}).length*60,e=190+j;
+    var Q={bottom:[CX-g.hv-30,CY+g.ey+e],top:[CX+g.hv+30,CY-g.ey-e],left:[CX-g.ex-e,CY-g.hh-30],right:[CX+g.ex+e,CY+g.hh+30]}[dir];
     return {x:Q[0],y:Q[1]};
   }
   /* borden en lichten: op de hoek rechts van de naderende bestuurder, elk volgend bord iets verder terug */
   var k=postsFacing(ROT[dir])*80,d=70;
-  var P={bottom:[CX+g.hv+d,CY+g.hh+d+k],top:[CX-g.hv-d,CY-g.hh-d-k],left:[CX-g.hv-d-k,CY+g.hh+d],right:[CX+g.hv+d+k,CY-g.hh-d]}[dir];
+  var P={bottom:[CX+g.hv+d,CY+g.ey+d+k],top:[CX-g.hv-d,CY-g.ey-d-k],left:[CX-g.ex-d-k,CY+g.hh+d],right:[CX+g.ex+d+k,CY-g.hh-d]}[dir];
   return {x:P[0],y:P[1]};
 }
 function crossPlace(it){
@@ -189,13 +192,16 @@ function roadPlace(it){
     return {x:CX+(v?off:0),y:CY+(v?0:off),rot:v?0:90,h:v?H:W};
   }
   if(t==='asfalt')return {x:CX,y:CY,rot:v?90:0,w:W,h:190};
-  if(t==='zebra')return {x:v?CX:250,y:v?250:CY,rot:v?0:90,w:Math.min(RW,560)};
+  if(t==='zebra'||t==='fietsoversteek')return {x:v?CX:250,y:v?250:CY,rot:v?0:90,w:Math.min(RW,560)};
+  if(t==='zigzag')return {x:v?CX+RW/2-16:CX,y:v?CY:CY+RW/2-16,rot:v?0:90,h:300};
+  if(t==='suggestie')return {x:v?CX+RW/2-47:CX,y:v?CY:CY+RW/2-47,rot:v?0:90,h:v?H:W};
   if(t==='vlak')return {x:CX,y:CY,rot:v?0:90};
   if(t==='stopline'||t==='sharks'){q=pt(520,70);return {x:q[0],y:q[1],rot:ROT[d2],w:140};}
+  if(t==='opstelvak'){q=pt(600,70);return {x:q[0],y:q[1],rot:ROT[d2],w:120};}
   if(LANEMARKS.indexOf(t)>-1){q=pt(210,70);return {x:q[0],y:q[1],rot:ROT[d2]};}
   if(t==='barrier'){return {x:CX+countOf([t])*30,y:CY,rot:v?0:90,w:300};}
   if(['agent_up','agent_side','cone','tag','baken','routepijl','tree','triangleI','kuil'].indexOf(t)>-1){return {x:CX+countOf([t])*44,y:CY};}
-  if(t==='ped'||t==='cyclist'){q=pt(260+countOf(['ped','cyclist'])*60,RW/2+40);return {x:q[0],y:q[1],rot:ROT[d2]};}
+  if(t==='ped'){q=pt(260+countOf(['ped'])*60,RW/2+40);return {x:q[0],y:q[1],rot:ROT[d2]};}
   q=pt(240+postsFacing(ROT[d2])*150,RW/2+60);
   return {x:q[0],y:q[1],rot:ROT[d2]};
 }
@@ -299,9 +305,11 @@ function buildLaneEd(it){
   if(L.length<6)mk('+','Rijstrook erbij',function(l){l.push('s');});
   if(L.length>1)mk('\u2212','Laatste rijstrook weg',function(l){l.pop();});
 }
-var ids=['bSmall','bBig','bRotL','bRotR','bFlip','bDup','bDel'];
 function updateToolbar(it){
-  ids.forEach(function(i){document.getElementById(i).disabled=!it;});
+  /* de knoppen voor een onderdeel verschijnen pas als er iets gekozen is */
+  document.getElementById('selTools').hidden=!it;
+  document.getElementById('selTip').hidden=!!it||items.length===0;
+  document.getElementById('bSpeed').hidden=!(it&&it.type==='c43');
   document.getElementById('bLight').hidden=!(it&&it.type==='light');
   var bb=document.getElementById('bBeacon');
   bb.hidden=!(it&&TYPES[it.type].beacon);
@@ -310,7 +318,7 @@ function updateToolbar(it){
   if(it)document.getElementById('bLine').textContent=it.type==='routepijl'?'Streepjes aan/uit':'Lijnen: onderbroken / vol';
   document.getElementById('bShape').hidden=!(it&&isPts(it));
   buildLaneEd(it);
-  var lab='Niets gekozen';
+  var lab='';
   if(it){lab=(it.type==='agent_up'||it.type==='agent_side')?'Bevoegd persoon':(it.type==='lanesign'?'Rijstrookbord (F13)':TYPES[it.type].label.replace(/\u00AD/g,''));}
   document.getElementById('selLabel').textContent=lab;
   document.getElementById('bUndo').disabled=undoStack.length===0;
@@ -446,7 +454,6 @@ document.getElementById('bSmall').onclick=function(){var it=sel();if(it)mutate(f
 document.getElementById('bBig').onclick=function(){var it=sel();if(it)mutate(function(){scaleItem(it,1.15);});};
 document.getElementById('bRotL').onclick=function(){var it=sel();if(it)mutate(function(){it.rot=((it.rot-90)%360+360)%360;});};
 document.getElementById('bRotR').onclick=function(){var it=sel();if(it)mutate(function(){it.rot=(it.rot+90)%360;});};
-document.getElementById('bFlip').onclick=function(){var it=sel();if(it)mutate(function(){it.flip=(it.flip||1)*-1;});};
 document.getElementById('bLight').onclick=function(){
   var it=sel();if(!it)return;
   mutate(function(){var o=['red','orange','green'];it.state=o[(o.indexOf(it.state||'red')+1)%3];});
@@ -454,6 +461,11 @@ document.getElementById('bLight').onclick=function(){
 document.getElementById('bBeacon').onclick=function(){
   var it=sel();if(!it)return;
   mutate(function(){if(it.beacon===false)delete it.beacon;else it.beacon=false;});
+};
+var SPEEDS=['20','30','50','70','90','120'];
+document.getElementById('bSpeed').onclick=function(){
+  var it=sel();if(!it)return;
+  mutate(function(){it.text=SPEEDS[(SPEEDS.indexOf(it.text||'50')+1)%SPEEDS.length];});
 };
 document.getElementById('bLine').onclick=function(){var it=sel();if(it)mutate(function(){if(it.type==='routepijl')it.dash=!it.dash;else it.solid=!it.solid;});};
 document.getElementById('bShape').onclick=function(){
@@ -484,7 +496,12 @@ document.getElementById('bClear').onclick=function(){
 
 document.addEventListener('keydown',function(e){
   var tag=(e.target.tagName||'').toLowerCase();
-  if(tag==='input'||tag==='select')return;
+  if(tag==='input'||tag==='select'||tag==='textarea'||!modal.hidden)return;
+  if(document.body.classList.contains('present')){
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();presStep(1);return;}
+    if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();presStep(-1);return;}
+    if(e.key==='Escape'){setPresent(false);return;}
+  }
   var k=e.key.toLowerCase();
   if((e.ctrlKey||e.metaKey)&&(k==='y'||(k==='z'&&e.shiftKey))){e.preventDefault();redo();return;}
   if((e.ctrlKey||e.metaKey)&&k==='z'){e.preventDefault();undo();return;}
@@ -506,15 +523,22 @@ document.addEventListener('keydown',function(e){
 
 /* ---------- situaties: kruispunt of rechte weg ---------- */
 function drawBase(){
-  var road=scene==='road',a=document.getElementById('rAsph'),v=roadS.orient==='v',w=roadS.roadW;
-  document.getElementById('base-cross').setAttribute('display',road?'none':'inline');
+  var road=scene==='road',round=scene==='round',a=document.getElementById('rAsph'),v=roadS.orient==='v',w=roadS.roadW;
+  document.getElementById('base-cross').setAttribute('display',scene==='cross'?'inline':'none');
   document.getElementById('base-road').setAttribute('display',road?'inline':'none');
+  document.getElementById('base-round').setAttribute('display',round?'inline':'none');
+  if(round)drawRound();
   if(v){a.setAttribute('x',CX-w/2);a.setAttribute('y',0);a.setAttribute('width',w);a.setAttribute('height',H);}
   else{a.setAttribute('x',0);a.setAttribute('y',CY-w/2);a.setAttribute('width',W);a.setAttribute('height',w);}
-  document.getElementById('sCross').className=road?'':'on';
+  document.getElementById('sCross').className=scene==='cross'?'on':'';
   document.getElementById('sRoad').className=road?'on':'';
+  document.getElementById('sRound').className=round?'on':'';
   document.getElementById('roadbar').hidden=!road;
-  document.getElementById('crossbar').hidden=road;
+  document.getElementById('crossbar').hidden=scene!=='cross';
+  document.getElementById('roundbar').hidden=!round;
+  document.getElementById('roundR').value=store.round.R;
+  document.getElementById('roundBike').value=store.round.bike||'';
+  document.getElementById('presetR').value=store.round.preset||'';
   drawCross();
   document.getElementById('roadW').value=w;
   document.getElementById('presetC').value=store.cross.preset||'';
@@ -543,6 +567,38 @@ function drawCross(){
   var stem={top:'bottom',bottom:'top',left:'right',right:'left'}[arm];
   document.querySelectorAll('[data-stem]').forEach(function(b){b.className='btn'+(b.getAttribute('data-stem')===stem?' on':'');});
   document.getElementById('crossVW').value=c.vw;document.getElementById('crossHW').value=c.hw;
+}
+/* afstand van het midden tot elke zijde van het achthoekige aparte fietspad */
+var BIKE_D=330;
+/* rotonde: armen met stoeprand, middeneiland met overrijdbare rand, druppelvormige middengeleiders */
+function drawRound(){
+  var R=store.round.R,ri=Math.round(R*.48),kerb='#b7a578',g='',
+      shapes='<rect x="380" y="0" width="240" height="860"/><rect x="0" y="310" width="1000" height="240"/><circle cx="500" cy="430" r="'+R+'"/>';
+  g+='<rect width="1000" height="860" fill="#dccda6"/><rect width="1000" height="860" fill="url(#paving)"/>';
+  g+='<g fill="#6f6a64" stroke="'+kerb+'" stroke-width="12">'+shapes+'</g><g fill="#6f6a64">'+shapes+'</g>';
+  g+='<circle cx="500" cy="430" r="'+(ri+22)+'" fill="#948f87" stroke="#d9d5cb" stroke-width="3"/>';
+  g+='<circle cx="500" cy="430" r="'+ri+'" fill="#7fb782" stroke="#d9d5cb" stroke-width="6"/>';
+  [0,90,180,270].forEach(function(r){
+    g+='<path transform="rotate('+r+' 500 430)" d="M500 '+(430+R+96)+'L519 '+(430+R+26)+'Q500 '+(430+R+4)+' 481 '+(430+R+26)+'Z" fill="#7fb782" stroke="#d9d5cb" stroke-width="4" stroke-linejoin="round"/>';
+  });
+  if(store.round.bike==='ring'){
+    /* fietspad op de rotonde: rode strook langs de buitenrand van de ring, rondom, met aan beide zijden een witte onderbroken lijn */
+    g+='<circle cx="500" cy="430" r="'+(R-15)+'" fill="none" stroke="#b85c46" stroke-width="28"/>';
+    g+='<g fill="none" stroke="#f3f3ee" stroke-width="4" stroke-dasharray="14 10"><circle cx="500" cy="430" r="'+(R-31)+'"/><circle cx="500" cy="430" r="'+(R-3)+'"/></g>';
+  }
+  if(store.round.bike==='apart'){
+    /* apart fietspad buiten de rotonde: een achthoek zoals een stopbord; de platte zijden steken de armen recht over.
+       Waar het een arm kruist, liggen er witte blokjes (fietsoversteek) aan beide kanten. */
+    var D=BIKE_D,o='',pts=[],k,rv=D/Math.cos(Math.PI/8);
+    for(k=0;k<8;k++){var a=(22.5+45*k)*Math.PI/180;pts.push((500+rv*Math.cos(a)).toFixed(1)+','+(430+rv*Math.sin(a)).toFixed(1));}
+    g+='<polygon points="'+pts.join(' ')+'" fill="none" stroke="#b85c46" stroke-width="28" stroke-linejoin="round"/>';
+    [-9,9].forEach(function(k){
+      [430+D+k,430-D+k].forEach(function(y){o+='M380 '+y+'H620';});
+      [500+D+k,500-D+k].forEach(function(x){o+='M'+x+' 310V550';});
+    });
+    g+='<path d="'+o+'" fill="none" stroke="#f3f3ee" stroke-width="10" stroke-dasharray="10 10"/>';
+  }
+  document.getElementById('base-round').innerHTML=g;
 }
 var OPP={top:'bottom',bottom:'top',left:'right',right:'left'};
 function setArm(a){
@@ -575,36 +631,61 @@ function setScene(name){
 }
 document.getElementById('sCross').onclick=function(){setScene('cross');};
 document.getElementById('sRoad').onclick=function(){setScene('road');};
+document.getElementById('sRound').onclick=function(){setScene('round');};
+slider('roundR',function(v){store.round.R=v;drawRound();});
+document.getElementById('roundBike').addEventListener('change',function(e){
+  var v=e.target.value;mutate(function(){store.round.bike=v;});drawRound();
+});
 slider('roadW',function(v){roadS.roadW=v;drawBase();});
 function setOrient(o){mutate(function(){roadS.orient=o;});drawBase();}
 document.getElementById('oV').onclick=function(){setOrient('v');};
 document.getElementById('oH').onclick=function(){setOrient('h');};
 
-(function(){
-  var sel=document.getElementById('presetC');
-  XPRESETS.forEach(function(p){var o=document.createElement('option');o.value=p.id;o.textContent=p.label;sel.appendChild(o);});
-  sel.addEventListener('change',function(){
-    var p=XPRESETS.filter(function(x){return x.id===sel.value;})[0];
-    if(!p||scene!=='cross'){sel.value=store.cross.preset||'';return;}
-    pushHistory(snap());
-    store.cross.vw=p.vw;store.cross.hw=p.hw;store.cross.arm=p.arm;store.cross.preset=p.id;
-    items=p.build();items.forEach(function(i){i.id=++uid;});
-    store.cross.items=items;selId=null;drawBase();renderDpad();render();
+/* ---------- voorbeeldsituaties ---------- */
+var PSETS={cross:{list:XPRESETS,el:'presetC'},road:{list:PRESETS,el:'preset'},round:{list:RPRESETS,el:'presetR'}};
+function curPreset(){var id=store[scene].preset;return PSETS[scene].list.filter(function(p){return p.id===id;})[0]||null;}
+function applyPreset(p){
+  pushHistory(snap());
+  var st=store[scene];
+  if(scene==='cross'){st.vw=p.vw;st.hw=p.hw;st.arm=p.arm;}
+  else if(scene==='road'){st.roadW=p.roadW;st.orient='v';}
+  else{st.R=p.R||250;st.bike=p.bike||'';}
+  st.preset=p.id;
+  items=p.build();items.forEach(function(i){i.id=++uid;});
+  st.items=items;selId=null;drawBase();renderDpad();render();presLabel();
+}
+Object.keys(PSETS).forEach(function(k){
+  var cfg=PSETS[k],el=document.getElementById(cfg.el);
+  cfg.list.forEach(function(p){var o=document.createElement('option');o.value=p.id;o.textContent=p.label;el.appendChild(o);});
+  el.addEventListener('change',function(){
+    var p=cfg.list.filter(function(x){return x.id===el.value;})[0];
+    if(!p||scene!==k){el.value=store[k].preset||'';return;}
+    applyPreset(p);
   });
-})();
-(function(){
-  var sel=document.getElementById('preset');
-  PRESETS.forEach(function(p){var o=document.createElement('option');o.value=p.id;o.textContent=p.label;sel.appendChild(o);});
-  sel.addEventListener('change',function(){
-    var p=PRESETS.filter(function(x){return x.id===sel.value;})[0];
-    if(!p){sel.value=roadS.preset||'';return;}
-    if(scene!=='road')return;
-    pushHistory(snap());
-    roadS.roadW=p.roadW;roadS.orient='v';roadS.preset=p.id;
-    items=p.build();items.forEach(function(i){i.id=++uid;});
-    store.road.items=items;selId=null;drawBase();render();
-  });
-})();
+});
+
+/* ---------- presentatiemodus: alleen de tekening, schermvullend; pijltjes = vorig/volgend voorbeeld ---------- */
+function presLabel(){var p=curPreset();document.getElementById('pLabel').textContent=p?p.label:'Eigen tekening';}
+function presStep(d){
+  var L=PSETS[scene].list,p=curPreset(),i=p?L.indexOf(p):-1;
+  i=i<0?(d>0?0:L.length-1):(i+d+L.length)%L.length;
+  applyPreset(L[i]);
+}
+function setPresent(on){
+  document.body.classList.toggle('present',on);
+  if(on){
+    selId=null;render();presLabel();
+    var el=document.documentElement;
+    if(el.requestFullscreen&&!document.fullscreenElement)el.requestFullscreen().catch(function(){});
+  }else if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});
+}
+document.addEventListener('fullscreenchange',function(){
+  if(!document.fullscreenElement&&document.body.classList.contains('present'))setPresent(false);
+});
+document.getElementById('bPresent').onclick=function(){setPresent(true);};
+document.getElementById('pExit').onclick=function(){setPresent(false);};
+document.getElementById('pPrev').onclick=function(){presStep(-1);};
+document.getElementById('pNext').onclick=function(){presStep(1);};
 
 /* ---------- opslaan als afbeelding ---------- */
 function renderPng(){
@@ -633,57 +714,129 @@ function download(blob,name){
   setTimeout(function(){URL.revokeObjectURL(url);},1000);
 }
 
-var modal=document.getElementById('modal'),modalImg=document.getElementById('modalImg'),
-    modalDl=document.getElementById('modalDownload'),modalUrl=null;
-function showModal(msg,url){
-  modalImg.hidden=modalDl.hidden=!url;
-  if(url){modalImg.src=url;modalDl.href=url;modalDl.download='verkeerssituatie-'+stamp()+'.png';}
-  else modalImg.removeAttribute('src');
-  document.getElementById('modalMsg').textContent=msg;
-  modal.hidden=false;
-  document.getElementById('modalClose').focus();
+function escHtml(t){return String(t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+/* ---------- dialoogvenster en meldingen ---------- */
+var modal=document.getElementById('modal'),modalCard=document.getElementById('modalCard');
+function openDialog(html,cls){
+  modalCard.className='card'+(cls?' '+cls:'');
+  modalCard.innerHTML=html;modal.hidden=false;
+  var f=modalCard.querySelector('[autofocus]')||modalCard.querySelector('button,input');
+  if(f)f.focus();
+  return modalCard;
 }
+function closeModal(){modal.hidden=true;modalCard.innerHTML='';}
+function showModal(msg){
+  openDialog('<h2 id="modalTitle">Let op</h2><p>'+escHtml(msg)+'</p><div class="row"><button class="btn primary" type="button" data-close autofocus>Sluiten</button></div>');
+}
+modal.addEventListener('click',function(e){if(e.target===modal||e.target.closest('[data-close]'))closeModal();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!modal.hidden)closeModal();});
+var toastEl=document.getElementById('toast'),toastTimer=0;
+function toast(msg){
+  toastEl.textContent=msg;toastEl.hidden=false;
+  clearTimeout(toastTimer);toastTimer=setTimeout(function(){toastEl.hidden=true;},4000);
+}
+
+/* ---------- opslaan: één knop, twee keuzes ---------- */
 document.getElementById('bSave').onclick=function(){
-  var pngP=renderPng(),copied=false,clip=null;
+  var c=openDialog('<h2 id="modalTitle">Opslaan</h2>'+
+    '<button class="choice" type="button" data-save="png" autofocus><b>Afbeelding</b><span>Voor Word, PowerPoint of een e-mail. De afbeelding wordt gedownload en meteen gekopieerd, zodat je ze ook kunt plakken met Ctrl+V.</span></button>'+
+    '<button class="choice" type="button" data-save="json"><b>Werkbestand</b><span>Om later verder te tekenen in deze app: open het met de knop "Openen". Bewaart het kruispunt, de rechte weg en de rotonde samen.</span></button>'+
+    '<div class="row"><button class="btn" type="button" data-close>Annuleren</button></div>');
+  c.querySelector('[data-save="png"]').onclick=savePng;
+  c.querySelector('[data-save="json"]').onclick=saveJson;
+};
+function savePng(){
+  closeModal();
+  var pngP=renderPng(),clip=null;
   try{
     if(navigator.clipboard&&window.ClipboardItem){
-      clip=navigator.clipboard.write([new ClipboardItem({'image/png':pngP})]).then(function(){copied=true;},function(){});
+      clip=navigator.clipboard.write([new ClipboardItem({'image/png':pngP})]).then(function(){return true;},function(){return false;});
     }
   }catch(e){}
   Promise.all([pngP,clip]).then(function(r){
-    if(modalUrl)URL.revokeObjectURL(modalUrl);
-    modalUrl=URL.createObjectURL(r[0]);
-    showModal((copied?'De afbeelding is gekopieerd. Plak ze met Ctrl+V in Word. ':'')+'Of klik op "Downloaden" om ze als bestand te bewaren.',modalUrl);
-  }).catch(function(){
-    showModal('De afbeelding kon niet gemaakt worden. Probeer het opnieuw.');
-  });
-};
-function closeModal(){modal.hidden=true;}
-document.getElementById('modalClose').onclick=closeModal;
-modal.addEventListener('click',function(e){if(e.target===modal)closeModal();});
-document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!modal.hidden)closeModal();});
-
-/* ---------- tekening bewaren en openen als bestand (.json) ---------- */
-document.getElementById('bExport').onclick=function(){
-  saveNow();
+    download(r[0],'verkeerssituatie-'+stamp()+'.png');
+    toast(r[1]?'Afbeelding gedownload en gekopieerd: plak ze met Ctrl+V in Word.':'Afbeelding gedownload.');
+  }).catch(function(){showModal('De afbeelding kon niet gemaakt worden. Probeer het opnieuw.');});
+}
+function saveJson(){
+  closeModal();saveNow();
   var data=JSON.stringify({app:'verkeer-in-beeld',version:1,scene:scene,store:store});
   download(new Blob([data],{type:'application/json'}),'verkeerssituatie-'+stamp()+'.json');
-};
+  toast('Werkbestand gedownload. Open het later met de knop "Openen".');
+}
 var fileIn=document.getElementById('fileIn');
 document.getElementById('bImport').onclick=function(){fileIn.click();};
 fileIn.addEventListener('change',function(){
   var f=fileIn.files[0];fileIn.value='';
   if(!f)return;
-  var hasWork=store.cross.items.length||store.road.items.length;
+  var hasWork=store.cross.items.length||store.road.items.length||store.round.items.length;
   if(hasWork&&!confirm('Dit vervangt je huidige tekeningen. Doorgaan?'))return;
   f.text().then(function(txt){
     if(!applyData(JSON.parse(txt)))throw new Error('formaat');
     undoStack=[];redoStack=[];selId=null;
     drawBase();renderPalette();render();saveNow();
   }).catch(function(){
-    showModal('Dit bestand kon niet geopend worden. Kies een bestand dat je eerder met "Tekening bewaren" hebt gemaakt.');
+    showModal('Dit bestand kon niet geopend worden. Kies een werkbestand (.json) dat je eerder via "Opslaan" hebt gemaakt.');
   });
 });
+
+/* ---------- werkblad: tekening + meerkeuzevraag, afdrukken of als PDF bewaren ---------- */
+var LETTERS='ABCD';
+document.getElementById('bSheet').onclick=function(){
+  var p=curPreset(),q=(p&&p.q)||{question:'',answers:[],correct:0},img=null;
+  var ans=q.answers.concat(['','','','']).slice(0,4);
+  var c=openDialog('<h2 id="modalTitle">Werkblad afdrukken</h2><div class="ws"><div class="wsForm">'+
+    '<label class="field">Titel<input id="wsTitle" value="'+escHtml(p?p.label:'Verkeerssituatie')+'"></label>'+
+    '<label class="field">Vraag<textarea id="wsQ" rows="2" placeholder="Bijvoorbeeld: Wie mag als eerste doorrijden?">'+escHtml(q.question)+'</textarea></label>'+
+    '<fieldset class="field"><legend>Antwoorden <small>duid het juiste aan, laat leeg wat je niet nodig hebt</small></legend>'+
+    ans.map(function(a,i){
+      return '<div class="ans"><input type="radio" name="wsOk" value="'+i+'"'+(i===q.correct?' checked':'')+' aria-label="Antwoord '+LETTERS[i]+' is juist"><b>'+LETTERS[i]+'</b><input id="wsA'+i+'" value="'+escHtml(a)+'" aria-label="Antwoord '+LETTERS[i]+'"></div>';
+    }).join('')+'</fieldset>'+
+    '<label class="check"><input type="checkbox" id="wsName" checked> Lijnen voor naam en datum</label>'+
+    '<label class="check"><input type="checkbox" id="wsKey" checked> Antwoordsleutel op een aparte pagina</label>'+
+    '<p class="small">Tip: kies in het afdrukvenster "Opslaan als PDF" om er een PDF van te maken.</p>'+
+    '</div><div class="wsPrevWrap" aria-label="Voorbeeld van het werkblad"><div class="wsPrev" id="wsPrev"><p class="small">Voorbeeld wordt gemaakt…</p></div></div></div>'+
+    '<div class="row"><button class="btn" type="button" data-close>Annuleren</button><button class="btn primary" type="button" id="wsPrint" disabled>Afdrukken</button></div>','wide');
+  function read(){
+    var okEl=c.querySelector('input[name="wsOk"]:checked'),ok=okEl?+okEl.value:-1,list=[],i;
+    for(i=0;i<4;i++){var t=c.querySelector('#wsA'+i).value.trim();if(t)list.push({t:t,ok:i===ok});}
+    return {title:c.querySelector('#wsTitle').value.trim()||'Verkeerssituatie',q:c.querySelector('#wsQ').value.trim(),
+      answers:list,name:c.querySelector('#wsName').checked,key:c.querySelector('#wsKey').checked&&list.some(function(a){return a.ok;})};
+  }
+  /* het voorbeeld toont exact wat er afgedrukt wordt, en verandert mee terwijl je typt */
+  function preview(){
+    if(!img)return;
+    var o=read();
+    c.querySelector('#wsPrev').innerHTML=sheetPage(o,img,false)+(o.key?sheetPage(o,img,true):'');
+  }
+  c.addEventListener('input',preview);c.addEventListener('change',preview);
+  c.querySelector('#wsTitle').focus();
+  renderPng().then(function(blob){
+    return new Promise(function(res){var fr=new FileReader();fr.onload=function(){res(fr.result);};fr.readAsDataURL(blob);});
+  }).then(function(url){
+    img=url;preview();c.querySelector('#wsPrint').disabled=false;
+  }).catch(function(){c.querySelector('#wsPrev').innerHTML='<p class="small">Het voorbeeld kon niet gemaakt worden.</p>';});
+  c.querySelector('#wsPrint').onclick=function(){var o=read();closeModal();printSheet(o,img);};
+};
+function sheetPage(o,img,key){
+  return '<section class="sheet"><h1>'+escHtml(o.title)+'</h1>'+
+    (key?'<div class="keylabel">Antwoordsleutel</div>':(o.name?'<div class="nameline"><span>Naam: ________________________________</span><span>Datum: ______________</span></div>':''))+
+    '<img src="'+img+'" alt="">'+
+    (o.q?'<p class="q">'+escHtml(o.q)+'</p>':'')+
+    (o.answers.length?'<ol class="mc">'+o.answers.map(function(a,i){
+      var mark=key&&a.ok;
+      return '<li'+(mark?' class="ok"':'')+'><span class="box">'+(mark?'✓':'')+'</span><b>'+LETTERS[i]+'</b><span>'+escHtml(a.t)+'</span></li>';
+    }).join('')+'</ol>':'')+
+    '<footer>Verkeer in beeld · Kurt Braeye · Ligo Midden- en Zuid-West-Vlaanderen</footer></section>';
+}
+function printSheet(o,img){
+  var box=document.getElementById('print');
+  box.innerHTML=sheetPage(o,img,false)+(o.key?sheetPage(o,img,true):'');
+  var imgs=[].slice.call(box.querySelectorAll('img'));
+  Promise.all(imgs.map(function(im){return im.complete?0:new Promise(function(r){im.onload=im.onerror=r;});})).then(function(){window.print();});
+}
+window.addEventListener('afterprint',function(){document.getElementById('print').innerHTML='';});
 
 renderPalette();
 var openKey='kruispunt-bouwer-open';

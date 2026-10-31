@@ -105,20 +105,20 @@ function sortLanes(signY){
     I('lanesign',930,signY,{lanes:['l','s','r'],s:1.2})];
 }
 var XPRESETS=[
-  {id:'c1',label:'Kruispunt zonder borden: voorrang aan rechts',vw:240,hw:240,arm:null,build:function(){
+  {id:'c1',q:{question:'Wie mag als eerste doorrijden?',answers:['Auto A','Auto B','Auto C','Ze moeten allemaal wachten'],correct:2},label:'Kruispunt zonder borden: voorrang aan rechts',vw:240,hw:240,arm:null,build:function(){
     return [carX('bottom',C.red),carX('right',C.blue),carX('top',C.green),
       tagAt(560,810,'A'),tagAt(905,370,'B'),tagAt(440,55,'C')];
   }},
-  {id:'c2',label:'T-kruispunt zonder borden: voorrang aan rechts',vw:240,hw:240,arm:'top',build:function(){
+  {id:'c2',q:{question:'Wie mag als eerste doorrijden?',answers:['Auto A','Auto B','Auto C','Wie het eerst aankomt'],correct:1},label:'T-kruispunt zonder borden: voorrang aan rechts',vw:240,hw:240,arm:'top',build:function(){
     return [carX('bottom',C.red),carX('right',C.blue),carX('left',C.orange),
       tagAt(560,810,'A'),tagAt(905,370,'B'),tagAt(95,490,'C')];
   }},
-  {id:'c3',label:'Voorrangsweg en "geef voorrang"',vw:240,hw:240,arm:null,build:function(){
+  {id:'c3',q:{question:'Wie mag als eerste doorrijden?',answers:['A, want B komt van links','B, want hij rijdt op de voorrangsweg','A, want hij komt van rechts','Wie het eerst aankomt'],correct:1},label:'Voorrangsweg en "geef voorrang"',vw:240,hw:240,arm:null,build:function(){
     return [I('priority',310,620,{rot:90}),I('priority',690,240,{rot:270}),I('yield',690,620),I('yield',310,240,{rot:180}),
       I('sharks',560,610,{w:108}),I('sharks',440,250,{rot:180,w:108}),
       carX('bottom',C.red),carX('right',C.blue),tagAt(560,810,'A'),tagAt(905,370,'B')];
   }},
-  {id:'c4',label:'Stopbord op het kruispunt',vw:240,hw:240,arm:null,build:function(){
+  {id:'c4',q:{question:'Wat moet bestuurder A doen?',answers:['Stoppen aan de stopstreep en B en C laten voorgaan','Alleen B laten voorgaan, want die komt van rechts','Vertragen en doorrijden als er niemand komt','Als eerste doorrijden'],correct:0},label:'Stopbord op het kruispunt',vw:240,hw:240,arm:null,build:function(){
     return [I('priority',310,620,{rot:90}),I('priority',690,240,{rot:270}),I('stop',690,620),I('stop',310,240,{rot:180}),
       I('stopline',560,621,{w:108}),I('stopline',440,239,{rot:180,w:108}),
       carX('bottom',C.red),carX('right',C.blue),carX('left',C.orange),
@@ -145,7 +145,7 @@ var XPRESETS=[
       I('car',680,800,{color:C.red}),I('car',560,800,{color:C.orange}),
       I('car',320,60,{rot:180,color:C.blue}),I('car',440,60,{rot:180,color:C.green})]);
   }},
-  {id:'c8',label:'Bevoegd persoon gaat voor lichten en borden',vw:240,hw:240,arm:null,build:function(){
+  {id:'c8',q:{question:'Wat moeten de bestuurders doen?',answers:['Allemaal stoppen, ook A en C met groen licht','A en C mogen doorrijden, want zij hebben groen','Alleen B en D stoppen, want zij hebben rood','De stopborden bepalen wie voorgaat'],correct:0},label:'Bevoegd persoon gaat voor lichten en borden',vw:240,hw:240,arm:null,build:function(){
     /* zoals "kruispunt met verkeerslichten", met een stopbord naast elk licht: de bevoegd persoon gaat boven alles */
     return [I('light',690,620,{state:'green'}),I('light',310,240,{state:'green',rot:180}),I('light',310,620,{state:'red',rot:90}),I('light',690,240,{state:'red',rot:270}),
       I('stop',755,620),I('stop',245,240,{rot:180}),I('stop',310,685,{rot:90}),I('stop',690,175,{rot:270}),
@@ -163,4 +163,76 @@ var XPRESETS=[
   }}
 ];
 
-export {PRESETS,XPRESETS};
+/* ---------- voorbeeldsituaties (rotonde) ----------
+   Midden (500,430), buitenstraal 250, armen van 240 breed. Op de rotonde rijdt men in tegenwijzerzin:
+   van onder naar rechts, boven, links. Een auto op de ring onder hoek θ (in graden, y naar onder) heeft rot = θ. */
+function ringCar(deg,color){
+  var a=deg*Math.PI/180;
+  return I('car',Math.round(500+190*Math.cos(a)),Math.round(430+190*Math.sin(a)),{rot:deg,color:color});
+}
+/* Haaientanden bij elke ingang, alleen op de inrijstrook (tussen middengeleider en stoeprand), op afstand ds van het midden.
+   B1 en D5 staan op het middeneiland: per ingang een paartje (halve grootte), gedraaid naar wie oprijdt. */
+function entries(ds){
+  ds=ds||265;
+  var out=[],i,arms=[['bottom',0],['left',90],['top',180],['right',270]];
+  var shark={bottom:[572,430+ds],top:[428,430-ds],left:[500-ds,502],right:[500+ds,358]};
+  for(i=0;i<arms.length;i++){
+    var k=arms[i][0],r=arms[i][1],a=r*Math.PI/180,c=Math.cos(a),sn=Math.sin(a);
+    /* posities voor de ingang onder (22 opzij, 84 onder het midden), gedraaid naar de andere ingangen */
+    var p1=[Math.round(500+22*c-84*sn),Math.round(430+22*sn+84*c)],p2=[Math.round(500-22*c-84*sn),Math.round(430-22*sn+84*c)];
+    out.push(I('yield',p1[0],p1[1],{rot:r,s:.5}),I('d5',p2[0],p2[1],{rot:r,s:.5}),
+      I('sharks',shark[k][0],shark[k][1],{rot:r,w:92}));
+  }
+  return out;
+}
+/* zebrapad op elke arm, voorbij de middengeleiders */
+function zebras(){
+  return [I('zebra',500,805,{w:240,h:56}),I('zebra',500,55,{w:240,h:56}),I('zebra',125,430,{w:240,h:56,rot:90}),I('zebra',875,430,{w:240,h:56,rot:90})];
+}
+function route(pts){
+  return I('routepijl',500,430,{pts:pts.map(function(p){return [p[0]-500,p[1]-430];})});
+}
+var A_IN=[560,760];
+var RPRESETS=[
+  {id:'r1',label:'Rotonde oprijden: voorrang aan wie op de rotonde rijdt',R:250,
+    q:{question:'Wie mag als eerste rijden?',answers:['A, want B komt van links','B, want A moet voorrang verlenen bij het oprijden','Wie het eerst aankomt','A, want hij rijdt rechtdoor'],correct:1},
+    build:function(){
+      return entries().concat([I('car',560,780,{color:C.red}),ringCar(135,C.blue),tagAt(480,800,'A'),tagAt(300,665,'B')]);
+    }},
+  {id:'r2',label:'Rotonde: rechtsaf (eerste afrit)',R:250,build:function(){
+    return entries().concat([route([A_IN,[560,660],[600,592],[668,522],[760,490],[880,490]]),I('car',560,800,{color:C.red}),tagAt(480,800,'A')]);
+  }},
+  {id:'r3',label:'Rotonde: rechtdoor (tweede afrit)',R:250,build:function(){
+    return entries().concat([route([A_IN,[560,668],[640,582],[690,450],[652,322],[560,252],[440,170],[440,40]]),I('car',560,800,{color:C.red}),tagAt(480,800,'A')]);
+  }},
+  {id:'r4',label:'Rotonde: linksaf (derde afrit)',R:250,build:function(){
+    return entries().concat([route([A_IN,[560,668],[640,590],[690,450],[642,300],[500,232],[370,270],[302,332],[150,370],[30,370]]),I('car',560,800,{color:C.red}),tagAt(480,800,'A')]);
+  }},
+  {id:'r5',label:'Rotonde verlaten: voetganger op het zebrapad',R:250,
+    q:{question:'A verlaat de rotonde. Wat moet A doen?',answers:['De voetganger laten oversteken','Doorrijden, want A rijdt op de rotonde','Claxonneren en doorrijden','Alleen stoppen als de voetganger al op het zebrapad loopt'],correct:0},
+    build:function(){
+      return entries().concat(zebras(),[I('ped',875,520,{color:C.orange,rot:180}),
+        I('car',735,490,{rot:90,color:C.red}),tagAt(735,565,'A')]);
+    }},
+  {id:'r6',label:'Rotonde met fietspad op de rotonde',R:250,bike:'ring',
+    q:{question:'Wie mag als eerste rijden?',answers:['A, want de fietser rijdt naast de rotonde','B, want A moet voorrang verlenen aan wie op de rotonde rijdt, ook aan fietsers','Wie het eerst aankomt','A, want hij komt van rechts'],correct:1},
+    build:function(){
+      var a=118*Math.PI/180;
+      return entries().concat([
+        I('bike',Math.round(500+235*Math.cos(a)),Math.round(430+235*Math.sin(a)),{rot:118,color:C.blue}),
+        I('car',560,780,{color:C.red}),tagAt(480,800,'A'),tagAt(330,640,'B')]);
+    }},
+  {id:'r7',label:'Rotonde met apart fietspad: fietsers wachten (haaientanden)',R:250,bike:'apart',
+    q:{question:'Wie mag eerst over de fietsoversteek?',answers:['A, want de fietser moet wachten aan de haaientanden','B, want fietsers hebben altijd voorrang','Wie het eerst aankomt','B, want hij komt van links'],correct:0},
+    build:function(){
+      /* Het fietspad is een achthoek met zijden op 330 van het midden; de platte zijden steken de armen haaks over.
+         Fietsers rijden in tegenwijzerzin. Twee kleine haaientanden haaks over het fietspad, vlak vóór elke oversteek. */
+      var D=330,out=entries(258);
+      out.push(I('sharks',370,430+D,{rot:90,w:52,s:.5}),I('sharks',500+D,560,{rot:0,w:52,s:.5}),
+        I('sharks',630,430-D,{rot:270,w:52,s:.5}),I('sharks',500-D,300,{rot:180,w:52,s:.5}));
+      return out.concat([I('bike',320,717,{rot:135,color:C.blue}),
+        I('car',560,820,{color:C.red}),tagAt(480,820,'A'),tagAt(285,690,'B')]);
+    }}
+];
+
+export {PRESETS,XPRESETS,RPRESETS};

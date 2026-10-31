@@ -1,12 +1,12 @@
 # Verkeer in beeld
 
-Een webapp om verkeerssituaties te tekenen op een kruispunt of een rechte weg:
-weggebruikers, verkeerslichten, borden, wegmarkeringen, wegenwerken en meer.
-De tekening kan je kopiëren of downloaden als afbeelding voor gebruik in Word of een presentatie.
+Een webapp om verkeerssituaties te tekenen op een kruispunt, een rechte weg of een rotonde:
+weggebruikers, verkeerslichten, verkeersborden (per officiële reeks), wegmarkeringen, wegenwerken en meer.
 
-- Werkt in elke moderne browser, op pc, Chromebook en tablet.
-- Installeerbaar als app en werkt offline (PWA).
-- Tekeningen worden automatisch bewaard in de browser, en kunnen als bestand (`.json`) bewaard en weer geopend worden.
+- **Opslaan** als afbeelding (voor Word of een presentatie) of als werkbestand (`.json`) om later verder te tekenen.
+- **Werkblad**: drukt de tekening af met een meerkeuzevraag en, desgewenst, een antwoordsleutel (ook als PDF).
+- **Presenteren**: schermvullend voor het digibord; met ← en → (of een presenter) door de voorbeelden.
+- Werkt in elke moderne browser, op pc, Chromebook en tablet; installeerbaar als app en werkt offline (PWA).
 
 ## Projectstructuur
 
@@ -34,6 +34,9 @@ python3 -m http.server 8123
 ```
 
 en open <http://localhost:8123>.
+
+Tip: `python3 tools/devserver.py` start dezelfde server op poort 8124, maar verbiedt de browser
+bestanden te onthouden. Zo zie je na elke wijziging meteen de nieuwste versie.
 
 ## Publiceren op GitHub Pages
 
