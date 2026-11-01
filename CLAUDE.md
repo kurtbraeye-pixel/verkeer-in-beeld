@@ -20,9 +20,13 @@ Gemaakt door Kurt Braeye (Ligo Midden- en Zuid-West-Vlaanderen). Communiceer in 
 ## Code
 - `js/types.js`: tekeningen van alle onderdelen (TYPES), materiaalpaneel (SECTIONS), POSTS (alles op een paal), sanitizeItem.
 - `js/presets.js`: voorbeeldsituaties PRESETS (rechte weg), XPRESETS (kruispunt), RPRESETS (rotonde); optioneel `q` = meerkeuzevraag voor het werkblad.
-- `js/app.js`: toestand, plaatsing (G() met hv/hh/ex/ey), werkbalk, opslaan, presentatiemodus, werkblad.
+- `js/app.js`: toestand, plaatsing (G() met hv/hh/ex/ey), werkbalk, eigenschappenpaneel (`renderInspector`), opslaan, presentatiemodus, werkblad.
+  Nieuwe instelbare eigenschappen van een onderdeel horen in het eigenschappenpaneel, niet in de werkbalk.
 - Tekenvlak 1000×860, midden (500,430). Rotatie: 0 = rijdt naar boven; borden draaien mee met de rijrichting (`follow`).
 - Stijl: SVG als strings, compact ES5-achtig, Nederlandstalig commentaar.
+- Opmaak: ontwerpregels (tokens voor letters, ruimtes, afrondingen, schaduwen, kleuren licht/donker) bovenaan `css/style.css`;
+  gebruik die variabelen in plaats van losse waarden. Iconen: Lucide-sprite bovenaan `index.html`, gebruik `<svg class="ic"><use href="#i-…"/></svg>`.
+  Knoppen: `.btn` (secundair), `.btn.ghost` (zonder rand), `.btn.primary` (hoofdactie), `.btn.icon` (alleen icoon).
 
 ## Inhoudelijk
 - Belgische regels en officiële SB250-borden; bij twijfel lesmateriaal of verkeersbord.be als referentie (zelf natekenen, niets kopiëren).

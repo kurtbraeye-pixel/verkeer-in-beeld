@@ -537,7 +537,8 @@ var POSTS=['light','stop','yield','priority','endpriority','b15a','b15b','b15c',
 
 var SECTIONS=[
   {el:'t-veh',entries:[{type:'car'},{type:'bus'},{type:'truck'},{type:'bike'},{type:'ambulance'},{type:'police'},{type:'fire'},{type:'ped'}]},
-  {el:'t-light',entries:[{type:'light',state:'red',label:'Rood'},{type:'light',state:'orange',label:'Oranje'},{type:'light',state:'green',label:'Groen'}]},
+  /* één verkeerslicht; de kleur (rood, oranje, groen) kies je in het eigenschappenpaneel */
+  {el:'t-light',entries:[{type:'light',state:'red',label:'Verkeerslicht'}]},
   /* verkeersborden per reeks, zoals de officiële indeling (A gevaar, B voorrang, C verbod, D gebod, F aanwijzing) */
   {el:'t-sign-a',entries:[{type:'a21'},{type:'a25'},{type:'workwarn'}]},
   {el:'t-sign-b',entries:[{type:'yield'},{type:'stop'},{type:'priority'},{type:'endpriority'},{type:'b15a'},{type:'b15b'},{type:'b15c'},{type:'b15d'},{type:'b15e'},{type:'b15f'},{type:'b15g'},{type:'b17'}]},
