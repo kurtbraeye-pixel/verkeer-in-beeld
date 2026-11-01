@@ -890,7 +890,6 @@ document.getElementById('bAbout').onclick=function(){
 
 /* ---------- welkomstscherm (bij elke keer openen) ---------- */
 function showWelcome(){
-  var hasWork=store.cross.items.length||store.road.items.length||store.round.items.length;
   openDialog('<div class="about-hero"><img src="icons/icon.svg" alt=""><div><h2 id="modalTitle">Welkom bij Verkeer in beeld</h2>'+
     '<div>Teken verkeerssituaties voor je les, in een paar klikken.</div></div></div>'+
     '<ol class="steps">'+
@@ -898,8 +897,7 @@ function showWelcome(){
       '<li><b>Voeg materiaal toe</b><span>Klik of sleep voertuigen, borden en markeringen uit de lijst links.</span></li>'+
       '<li><b>Pas aan en gebruik</b><span>Rechts stel je het gekozen onderdeel in. Presenteer op het digibord, sla op als afbeelding of druk een werkblad af.</span></li>'+
     '</ol>'+
-    '<div class="row">'+(hasWork?'<button class="btn ghost" type="button" data-close>Verder met mijn tekening</button>':'')+
-    '<button class="btn" type="button" id="wEmpty">Leeg beginnen</button>'+
+    '<div class="row"><button class="btn" type="button" id="wEmpty">Leeg beginnen</button>'+
     '<button class="btn primary" type="button" id="wGallery" autofocus>'+IC('grid')+'<span>Kies een voorbeeld</span></button></div>');
   modalCard.querySelector('#wGallery').onclick=function(){openGallery();};
   modalCard.querySelector('#wEmpty').onclick=function(){closeModal();startEmpty();};
