@@ -778,6 +778,8 @@ function sanitizeItem(raw){
   if(raw.beacon===false&&d.beacon)it.beacon=false;
   if(raw.nopost===true)it.nopost=true;
   if(raw.type==='b15'&&B15SIDE[raw.side])it.side=raw.side;
+  if(raw.order>=1&&raw.order<=9)it.order=Math.floor(raw.order);   /* volgorde bij afspelen */
+  if(it.order&&['s','l','r','u'].indexOf(raw.route)>-1)it.route=raw.route;
   if(d.signals&&['l','r','h'].indexOf(raw.blink)>-1)it.blink=raw.blink;
   if(d.signals&&raw.brake===true)it.brake=true;
   if(d.stretch||raw.type==='vlak'){

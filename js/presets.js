@@ -94,6 +94,8 @@ function carX(dirName,color,off){
   return I('car',m[0],m[1],{rot:m[2],color:color});
 }
 function tagAt(x,y,t){return I('tag',x,y,{text:t});}
+/* volgorde bij afspelen (n = 1, 2 …) en rijrichting (s, l, r) */
+function go(it,n,route){it.order=n;if(route&&route!=='s')it.route=route;return it;}
 /* spiegelt items rond het midden van het tekenvlak: wat voor verkeer van onder geldt, geldt dan voor verkeer van boven */
 function flip(list){
   return list.map(function(it){var c=JSON.parse(JSON.stringify(it));c.x=1000-c.x;c.y=860-c.y;c.rot=(c.rot+180)%360;return c;});
@@ -107,22 +109,22 @@ function sortLanes(signY){
 }
 var XPRESETS=[
   {id:'c1',q:{question:'Wie mag als eerste doorrijden?',answers:['Auto A','Auto B','Auto C','Ze moeten allemaal wachten'],correct:2},label:'Kruispunt zonder borden: voorrang aan rechts',vw:240,hw:240,arm:null,build:function(){
-    return [carX('bottom',C.red),carX('right',C.blue),carX('top',C.green),
+    return [go(carX('bottom',C.red),3),go(carX('right',C.blue),2),go(carX('top',C.green),1),
       tagAt(560,810,'A'),tagAt(905,370,'B'),tagAt(440,55,'C')];
   }},
   {id:'c2',q:{question:'Wie mag als eerste doorrijden?',answers:['Auto A','Auto B','Auto C','Wie het eerst aankomt'],correct:1},label:'T-kruispunt zonder borden: voorrang aan rechts',vw:240,hw:240,arm:'top',build:function(){
-    return [carX('bottom',C.red),carX('right',C.blue),carX('left',C.orange),
+    return [go(carX('bottom',C.red),2,'r'),go(carX('right',C.blue),1),go(carX('left',C.orange),3),
       tagAt(560,810,'A'),tagAt(905,370,'B'),tagAt(95,490,'C')];
   }},
   {id:'c3',q:{question:'Wie mag als eerste doorrijden?',answers:['A, want B komt van links','B, want hij rijdt op de voorrangsweg','A, want hij komt van rechts','Wie het eerst aankomt'],correct:1},label:'Voorrangsweg en "geef voorrang"',vw:240,hw:240,arm:null,build:function(){
     return [I('priority',310,620,{rot:90}),I('priority',690,240,{rot:270}),I('yield',690,620),I('yield',310,240,{rot:180}),
       I('sharks',560,610,{w:108}),I('sharks',440,250,{rot:180,w:108}),
-      carX('bottom',C.red),carX('right',C.blue),tagAt(560,810,'A'),tagAt(905,370,'B')];
+      go(carX('bottom',C.red),2),go(carX('right',C.blue),1),tagAt(560,810,'A'),tagAt(905,370,'B')];
   }},
   {id:'c4',q:{question:'Wat moet bestuurder A doen?',answers:['Stoppen aan de stopstreep en B en C laten voorgaan','Alleen B laten voorgaan, want die komt van rechts','Vertragen en doorrijden als er niemand komt','Als eerste doorrijden'],correct:0},label:'Stopbord op het kruispunt',vw:240,hw:240,arm:null,build:function(){
     return [I('priority',310,620,{rot:90}),I('priority',690,240,{rot:270}),I('stop',690,620),I('stop',310,240,{rot:180}),
       I('stopline',560,621,{w:108}),I('stopline',440,239,{rot:180,w:108}),
-      carX('bottom',C.red),carX('right',C.blue),carX('left',C.orange),
+      go(carX('bottom',C.red),2),go(carX('right',C.blue),1),go(carX('left',C.orange),1),
       tagAt(560,810,'A'),tagAt(905,370,'B'),tagAt(95,490,'C')];
   }},
   {id:'c5',label:'Kruispunt met borden en wegmarkeringen (voorsorteren)',vw:720,hw:240,arm:null,build:function(){

@@ -38,6 +38,8 @@
   <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
   <symbol id="i-grid" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></symbol>
+  <symbol id="i-step" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" x2="19" y1="5" y2="19"/></symbol>
   <symbol id="i-arrow" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
 </svg>
 <header class="appbar">
@@ -132,6 +134,7 @@
         <button class="btn ghost icon" id="bUndo" type="button" title="Ongedaan maken (Ctrl+Z)" aria-label="Ongedaan maken"><svg class="ic"><use href="#i-undo"/></svg></button>
         <button class="btn ghost icon" id="bRedo" type="button" title="Opnieuw (Ctrl+Shift+Z)" aria-label="Opnieuw"><svg class="ic"><use href="#i-redo"/></svg></button>
       </div>
+      <div class="grp" id="playGrp" hidden><button class="btn primary" id="bPlay" type="button" title="Alle voertuigen na elkaar laten vertrekken"><svg class="ic"><use href="#i-play"/></svg><span>Afspelen</span></button><button class="btn" id="bStep" type="button" title="Volgende stap (spatie in de presentatie)"><svg class="ic"><use href="#i-step"/></svg><span>Stap 1</span></button><button class="btn ghost icon" id="bReset" type="button" title="Terug naar het begin" aria-label="Terug naar het begin"><svg class="ic"><use href="#i-rotl"/></svg></button></div>
       <div class="grp end">
         <button class="btn ghost danger" id="bClear" type="button" title="Alles wissen"><svg class="ic"><use href="#i-eraser"/></svg><span>Wissen</span></button>
       </div>
@@ -166,6 +169,7 @@
         <button class="btn ghost icon" id="pPrev" type="button" title="Vorig voorbeeld (←)" aria-label="Vorig voorbeeld"><svg class="ic"><use href="#i-left"/></svg></button>
         <span id="pLabel"></span>
         <button class="btn ghost icon" id="pNext" type="button" title="Volgend voorbeeld (→)" aria-label="Volgend voorbeeld"><svg class="ic"><use href="#i-right"/></svg></button>
+        <div class="grp" id="pPlayGrp" hidden><button class="btn primary" id="pPlay" type="button" title="Alle voertuigen na elkaar laten vertrekken"><svg class="ic"><use href="#i-play"/></svg><span>Afspelen</span></button><button class="btn" id="pStep" type="button" title="Volgende stap (spatie in de presentatie)"><svg class="ic"><use href="#i-step"/></svg><span>Stap 1</span></button><button class="btn ghost icon" id="pReset" type="button" title="Terug naar het begin" aria-label="Terug naar het begin"><svg class="ic"><use href="#i-rotl"/></svg></button></div>
         <button class="btn ghost" id="pExit" type="button" title="Presentatie stoppen (Esc)"><svg class="ic"><use href="#i-x"/></svg><span>Stoppen</span></button>
       </div>
     </div>

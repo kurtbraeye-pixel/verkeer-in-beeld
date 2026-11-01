@@ -56,7 +56,7 @@ function restore(str){
   drawBase();renderDpad();renderTiles();render();
 }
 function pushHistory(s){undoStack.push(s);if(undoStack.length>60)undoStack.shift();redoStack=[];}
-function mutate(fn){var b=snap();fn();if(snap()!==b)pushHistory(b);render();}
+function mutate(fn){stopPlay();var b=snap();fn();if(snap()!==b)pushHistory(b);render();}
 function find(id){for(var i=0;i<items.length;i++)if(items[i].id===id)return items[i];return null;}
 
 /* ---------- palette ---------- */
@@ -238,6 +238,7 @@ function render(){
   selLayer.innerHTML=it?selMarkup(it):'';
   updateToolbar(it);
   document.getElementById('hint').hidden=items.length>0;
+  if(typeof playUI==='function')playUI();
   saveState();
 }
 function byLayer(a,b){return layerOf(a)-layerOf(b);}
@@ -331,7 +332,7 @@ function renderInspector(it){
   document.getElementById('inspector').classList.toggle('has-sel',!!it);
   if(!it){body.hidden=true;empty.hidden=false;insKey='';return;}
   var d=TYPES[it.type];
-  var key=[it.id,it.type,(it.lanes||[]).join(''),d.color?it.color:'',it.state||'',it.beacon===false,!!it.solid,!!it.dash,it.blink||'',!!it.brake,it.side||''].join('|');
+  var key=[it.id,it.type,(it.lanes||[]).join(''),d.color?it.color:'',it.state||'',it.beacon===false,!!it.solid,!!it.dash,it.blink||'',!!it.brake,it.side||'',it.order||'',it.route||'',scene].join('|');
   if(key===insKey){syncInspector(it);return;}
   insKey=key;empty.hidden=true;body.hidden=false;
   var h='<h2>'+escHtml(itemLabel(it))+'</h2>';
@@ -350,6 +351,13 @@ function renderInspector(it){
     h+=insField('Richtingaanwijzer','<div class="seg">'+[['','Uit'],['l','Links'],['r','Rechts'],['h','Alarm']].map(function(o){
       return '<button type="button" data-blink="'+o[0]+'"'+((it.blink||'')===o[0]?' class="on"':'')+'>'+o[1]+'</button>';}).join('')+'</div>');
     h+='<label class="switch"><input type="checkbox" data-k="brake"'+(it.brake?' checked':'')+'> Remlichten aan</label>';
+  }
+  if(d.kind==='vehicle'||it.type==='ped'){
+    h+=insField('Afspelen: vertrekt als','<div class="seg">'+[0,1,2,3,4,5].map(function(n){
+      return '<button type="button" data-order="'+n+'"'+((it.order||0)===n?' class="on"':'')+'>'+(n?n+'e':'–')+'</button>';}).join('')+'</div>');
+    var RT=scene==='cross'?[['l','Links af'],['s','Rechtdoor'],['r','Rechts af']]:scene==='round'?[['r','1e afrit'],['s','2e afrit'],['l','3e afrit'],['u','Keren']]:null;
+    if(it.order&&RT&&it.type!=='ped')h+=insField('Rijdt','<div class="seg">'+RT.map(function(o){
+      return '<button type="button" data-route="'+o[0]+'"'+((it.route||'s')===o[0]?' class="on"':'')+'>'+o[1]+'</button>';}).join('')+'</div>');
   }
   if(d.beacon)h+='<label class="switch"><input type="checkbox" data-k="beacon"'+(it.beacon!==false?' checked':'')+'> Zwaailicht aan (prioritair)</label>';
   if(it.type==='c43')h+=insField('Maximumsnelheid','<select data-k="speed" aria-label="Maximumsnelheid">'+SPEEDS.map(function(v){
@@ -418,6 +426,8 @@ function syncInspector(it){
       mutate(function(){it.color=c;});return;
     }
     if(b.hasAttribute('data-blink')){var bl=b.getAttribute('data-blink');mutate(function(){if(bl)it.blink=bl;else delete it.blink;});return;}
+    if(b.hasAttribute('data-order')){var on=+b.getAttribute('data-order');mutate(function(){if(on)it.order=on;else{delete it.order;delete it.route;}});return;}
+    if(b.hasAttribute('data-route')){var ro=b.getAttribute('data-route');mutate(function(){it.route=ro;});return;}
     if(b.hasAttribute('data-b15')){var sd=b.getAttribute('data-b15');mutate(function(){it.side=sd;});return;}
     if(b.hasAttribute('data-light')){var st=b.getAttribute('data-light');mutate(function(){it.state=st;});return;}
     if(b.hasAttribute('data-lane')){
@@ -446,6 +456,7 @@ function toLocal(p,it){
 }
 var lastV=null;
 svg.addEventListener('pointerdown',function(e){
+  if(play){stopPlay();}
   if(e.button!==0)return;
   var h=e.target.closest('[data-h]'),g=e.target.closest('#items [data-id]'),p=pt(e);
   if(h&&selId!==null){
@@ -567,11 +578,11 @@ function dup(){
 }
 function del(){var it=sel();if(!it)return;mutate(function(){items=items.filter(function(i){return i.id!==it.id;});store[scene].items=items;selId=null;});}
 function undo(){
-  if(!undoStack.length)return;
+  stopPlay();if(!undoStack.length)return;
   redoStack.push(snap());restore(undoStack.pop());
 }
 function redo(){
-  if(!redoStack.length)return;
+  stopPlay();if(!redoStack.length)return;
   undoStack.push(snap());restore(redoStack.pop());
 }
 document.getElementById('bUndo').onclick=undo;
@@ -584,6 +595,7 @@ document.addEventListener('keydown',function(e){
   var tag=(e.target.tagName||'').toLowerCase();
   if(tag==='input'||tag==='select'||tag==='textarea'||!modal.hidden)return;
   if(document.body.classList.contains('present')){
+    if(e.key===' '&&playGroups().length){e.preventDefault();if(play&&!play.moving&&play.gi>=play.groups.length)stopPlay();else playStep(false);return;}
     if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();presStep(1);return;}
     if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();presStep(-1);return;}
     if(e.key==='Escape'){setPresent(false);return;}
@@ -735,6 +747,7 @@ slider('crossVW',function(v){store.cross.vw=v;drawCross();});
 slider('crossHW',function(v){store.cross.hw=v;drawCross();});
 function setScene(name){
   if(name===scene)return;
+  stopPlay();
   store[scene].items=items;scene=name;items=store[scene].items;
   undoStack=[];redoStack=[];selId=null;drawBase();renderDpad();render();
 }
@@ -754,7 +767,7 @@ document.getElementById('oH').onclick=function(){setOrient('h');};
 var PSETS={cross:{list:XPRESETS,el:'presetC'},road:{list:PRESETS,el:'preset'},round:{list:RPRESETS,el:'presetR'}};
 function curPreset(){var id=store[scene].preset;return PSETS[scene].list.filter(function(p){return p.id===id;})[0]||null;}
 function applyPreset(p){
-  pushHistory(snap());
+  stopPlay();pushHistory(snap());
   var st=store[scene];
   if(scene==='cross'){st.vw=p.vw;st.hw=p.hw;st.arm=p.arm;}
   else if(scene==='road'){st.roadW=p.roadW;st.orient='v';}
@@ -776,7 +789,7 @@ Object.keys(PSETS).forEach(function(k){
 
 /* leeg tekenvlak voor de huidige situatie (ongedaan maken brengt de vorige tekening terug) */
 function startEmpty(){
-  if(items.length)pushHistory(snap());
+  stopPlay();if(items.length)pushHistory(snap());
   items=[];store[scene].items=items;store[scene].preset=null;selId=null;drawBase();render();presLabel();
 }
 
@@ -845,6 +858,133 @@ document.getElementById('bPresent').onclick=function(){setPresent(true);};
 document.getElementById('pExit').onclick=function(){setPresent(false);};
 document.getElementById('pPrev').onclick=function(){presStep(-1);};
 document.getElementById('pNext').onclick=function(){presStep(1);};
+
+/* ---------- afspelen: voertuigen vertrekken stap voor stap in de ingestelde volgorde ---------- */
+/* it.order = 1, 2, 3 … (gelijke nummers rijden samen); it.route = s rechtdoor, l links, r rechts, u keren (rotonde) */
+var play=null,playRaf=0;
+var PLAYSPEED={ped:80,bike:170,brom:210,tram:220};
+function movers(){return items.filter(function(o){return o.order;});}
+function playGroups(){
+  var nums=[];movers().forEach(function(o){if(nums.indexOf(o.order)<0)nums.push(o.order);});
+  return nums.sort(function(a,b){return a-b;}).map(function(n){return items.filter(function(o){return o.order===n;}).map(function(o){return o.id;});});
+}
+/* route als lijst punten in het tekenvlak, tot buiten beeld */
+function routePts(it){
+  var h=it.rot*Math.PI/180,r=[Math.cos(h),Math.sin(h)],f=[Math.sin(h),-Math.cos(h)];
+  function W2(X,Y){return [CX+X*r[0]-Y*f[0],CY+X*r[1]-Y*f[1]];}   /* X naar rechts, Y naar achter (lokaal) */
+  var X0=(it.x-CX)*r[0]+(it.y-CY)*r[1],Y0=-((it.x-CX)*f[0]+(it.y-CY)*f[1]),pts=[],q;
+  var route=it.type==='ped'||scene==='road'?'s':(it.route||'s');
+  function bez(a,k,b){for(var t=0;t<=1.0001;t+=.05){var u=1-t;pts.push(W2(u*u*a[0]+2*u*t*k[0]+t*t*b[0],u*u*a[1]+2*u*t*k[1]+t*t*b[1]));}}
+  if(scene==='round'){
+    var R=store.round.R,Rl=(Math.round(R*.48)+22+R)/2,dx=it.x-CX,dy=it.y-CY,phi;
+    if(Math.hypot(dx,dy)>Rl+4){
+      /* rechtdoor naar de ring tot op de rijstrook */
+      var b=dx*f[0]+dy*f[1],c=dx*dx+dy*dy-Rl*Rl,disc=b*b-c;
+      if(disc<0)route='s';
+      else{var t0=-b-Math.sqrt(disc);pts.push([it.x,it.y]);q=[it.x+f[0]*t0,it.y+f[1]*t0];pts.push(q);phi=Math.atan2(q[1]-CY,q[0]-CX);}
+    }else{pts.push([it.x,it.y]);phi=Math.atan2(dy,dx);}
+    if(phi!=null){
+      /* uitritten: rechterrijstrook van elke arm; tegenwijzerzin = hoek neemt af */
+      var base=Math.asin(Math.min(.9,60/Rl)),n={r:1,s:2,l:3,u:4}[route]||2,cand=[],k,ex;
+      /* de n-de uitrit na het oprijden */
+      for(k=-8;k<8;k++){var a2=base+k*Math.PI/2;if(a2<phi-.05)cand.push(a2);}
+      cand.sort(function(a,b){return b-a;});ex=cand[n-1];
+      var ea=ex+.3,da=ex-base;   /* vloeiend van de ring naar de uitrit */
+      if(ea>phi)ea=phi;
+      for(var a3=phi;a3>ea;a3-=.06)pts.push([CX+Rl*Math.cos(a3),CY+Rl*Math.sin(a3)]);
+      var s0=[CX+Rl*Math.cos(ea),CY+Rl*Math.sin(ea)],e=[CX+Rl*Math.cos(ex),CY+Rl*Math.sin(ex)],e2=[e[0]+Math.cos(da)*70,e[1]+Math.sin(da)*70];
+      routeExit=s0;pts.push(s0);
+      for(var t1=.1;t1<=1.0001;t1+=.1){var u1=1-t1;pts.push([u1*u1*s0[0]+2*u1*t1*e[0]+t1*t1*e2[0],u1*u1*s0[1]+2*u1*t1*e[1]+t1*t1*e2[1]]);}
+      pts.push([e2[0]+Math.cos(da)*1500,e2[1]+Math.sin(da)*1500]);
+      return clipPts(pts);
+    }
+  }
+  if(scene==='cross'&&route!=='s'){
+    var g=G(),vert=Math.abs(Math.sin(h))<.5,eIn=vert?g.ey:g.ex,eOut=vert?g.ex:g.ey,o=X0;
+    pts.push(W2(X0,Y0));
+    if(route==='r'){bez([o,Math.max(eIn,o+10)],[o,o],[Math.max(eOut,o+10),o]);pts.push(W2(1500,o));}
+    else{bez([o,eIn],[o,-o],[-eOut,-o]);pts.push(W2(-1500,-o));}
+    return clipPts(pts);
+  }
+  pts.push([it.x,it.y]);pts.push(W2(X0,-1500));
+  return clipPts(pts);
+}
+/* knip de route af zodra het voertuig helemaal buiten beeld is */
+function clipPts(p){
+  function out(q){return q[0]<-140||q[0]>W+140||q[1]<-140||q[1]>H+140;}
+  for(var i=1;i<p.length;i++)if(out(p[i])){
+    /* zoek het punt op het laatste stuk waar het voertuig net buiten beeld is */
+    var a=p[i-1],b=p[i],lo=0,hi=1,k;
+    for(k=0;k<20;k++){var m=(lo+hi)/2;if(out([a[0]+(b[0]-a[0])*m,a[1]+(b[1]-a[1])*m]))hi=m;else lo=m;}
+    return p.slice(0,i).concat([[a[0]+(b[0]-a[0])*hi,a[1]+(b[1]-a[1])*hi]]);
+  }
+  return p;
+}
+var routeExit=null;
+function prepRoute(it){
+  routeExit=null;
+  var p=routePts(it),L=[0],end;
+  for(var i=1;i<p.length;i++)L.push(L[i-1]+Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]));
+  end=L[L.length-1];
+  var m={p:p,L:L,d:0,v:PLAYSPEED[it.type]||280,blink:null,b0:0,b1:end*.7};
+  if(routeExit){
+    /* rotonde: niet knipperen bij het oprijden, wel rechts vlak voor de uitrit */
+    for(i=0;i<p.length;i++)if(p[i]===routeExit){m.blink='r';m.b1=L[i]+90;m.b0=Math.max(0,L[i]-120);}
+  }else if(it.route==='l'||it.route==='r')m.blink=it.route;
+  return m;
+}
+function routeAt(m){
+  var p=m.p,L=m.L,d=Math.min(m.d,L[L.length-1]),i=1;
+  while(i<L.length-1&&L[i]<d)i++;
+  var a=p[i-1],b=p[i],seg=(L[i]-L[i-1])||1,t=(d-L[i-1])/seg;
+  return {x:a[0]+(b[0]-a[0])*t,y:a[1]+(b[1]-a[1])*t,rot:(Math.atan2(b[0]-a[0],-(b[1]-a[1]))*180/Math.PI+360)%360};
+}
+function playStep(auto){
+  if(play&&play.moving)return;
+  if(!play){var gr=playGroups();if(!gr.length)return;play={groups:gr,gi:0,ov:{},moving:null,auto:false};selId=null;}
+  if(play.gi>=play.groups.length){if(!auto)return;stopPlay();playStep(true);return;}
+  play.auto=!!auto;
+  var mv={};play.groups[play.gi].forEach(function(id){var it=find(id);if(it)mv[id]=prepRoute(it);});
+  play.moving=mv;play.gi++;play.last=0;
+  playRaf=requestAnimationFrame(playTick);
+  playUI();
+}
+function playTick(ts){
+  playRaf=0;if(!play||!play.moving)return;
+  var dt=play.last?Math.min(.05,(ts-play.last)/1000):0,busy=false;play.last=ts;
+  Object.keys(play.moving).forEach(function(id){
+    var m=play.moving[id];m.d+=m.v*dt;
+    var pos=routeAt(m),it=find(+id);
+    play.ov[id]={x:pos.x,y:pos.y,rot:pos.rot,blink:m.blink&&m.d>=m.b0&&m.d<m.b1?m.blink:(it&&it.blink)};
+    if(m.d<m.L[m.L.length-1])busy=true;
+  });
+  renderPlay();
+  if(busy){playRaf=requestAnimationFrame(playTick);return;}
+  play.moving=null;playUI();
+  if(play.auto&&play.gi<play.groups.length)setTimeout(function(){if(play&&!play.moving&&play.auto)playStep(true);},450);
+}
+function renderPlay(){
+  layer.innerHTML=items.map(function(it){var o=play&&play.ov[it.id];return o?Object.assign({},it,o):it;}).sort(byLayer).map(itemSvg).join('');
+  selLayer.innerHTML='';
+}
+function stopPlay(){
+  if(!play)return;
+  if(playRaf)cancelAnimationFrame(playRaf);playRaf=0;play=null;render();
+}
+/* knoppen: alleen zichtbaar als er voertuigen met een volgorde zijn */
+function playUI(){
+  var n=playGroups().length,done=play?play.gi:0,end=play&&!play.moving&&done>=n;
+  ['playGrp','pPlayGrp'].forEach(function(gid){var g=document.getElementById(gid);if(g)g.hidden=!n;});
+  [['bStep','pStep'],['bPlay','pPlay'],['bReset','pReset']].forEach(function(pair){
+    pair.forEach(function(bid){var b=document.getElementById(bid);if(!b)return;
+      if(bid==='bStep'||bid==='pStep'){b.disabled=end||!!(play&&play.moving);b.querySelector('span').textContent='Stap '+Math.min(done+1,n)+' van '+n;}
+      if(bid==='bReset'||bid==='pReset')b.disabled=!play;
+    });
+  });
+}
+['bPlay','pPlay'].forEach(function(id){document.getElementById(id).onclick=function(){playStep(true);};});
+['bStep','pStep'].forEach(function(id){document.getElementById(id).onclick=function(){playStep(false);};});
+['bReset','pReset'].forEach(function(id){document.getElementById(id).onclick=stopPlay;});
 
 /* ---------- opslaan als afbeelding ---------- */
 function renderPng(){
