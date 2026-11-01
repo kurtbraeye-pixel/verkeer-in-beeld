@@ -1055,24 +1055,77 @@ document.getElementById('bAbout').onclick=function(){
   modalCard.querySelector('#aWelcome').onclick=function(){showWelcome();};
 };
 
-/* ---------- welkomstscherm (bij elke keer openen, tenzij "niet meer tonen" aangevinkt is) ---------- */
-var WELCOME_OFF='verkeer-welkom-uit';
+/* ---------- welkomstscherm: korte rondleiding in 3 stappen ----------
+   Verschijnt bij elke keer openen, tenzij "niet meer tonen" aangevinkt is.
+   Na een nieuwe versie met NEWS verschijnt het altijd één keer, met de vernieuwingen bij de juiste stap.
+   Bij een nieuwe versie: NEWS.id aanpassen en de items vervangen (step = 1, 2 of 3). */
+var WELCOME_OFF='verkeer-welkom-uit',NEWS_SEEN='verkeer-nieuws-gezien';
+var NEWS={id:'v28',items:[
+  {step:2,t:'Nieuwe verkeersborden, getekend zoals de officiële borden. Het voorrangsbord B15 is nu één bord: kies rechts welke variant je nodig hebt.'},
+  {step:2,t:'Alle voertuigen en personen in dezelfde stijl, met schaduw, spiegels en richtingaanwijzers.'},
+  {step:3,t:'Afspelen: stel bij elk voertuig in als hoeveelste het vertrekt en laat ze stap voor stap rijden. In de presentatie start de spatiebalk de volgende stap. De voorbeelden "wie mag eerst?" staan al klaar.'}
+]};
 function welcomeOff(){try{return localStorage.getItem(WELCOME_OFF)==='1';}catch(e){return false;}}
-function showWelcome(){
-  openDialog('<div class="about-hero"><img src="icons/icon.svg" alt=""><div><h2 id="modalTitle">Welkom bij Verkeer in beeld</h2>'+
-    '<div>Teken verkeerssituaties voor je les, in een paar klikken.</div></div></div>'+
-    '<ol class="steps">'+
-      '<li><b>Kies een situatie</b><span>Kruispunt, rechte weg of rotonde, of vertrek van een kant-en-klaar voorbeeld.</span></li>'+
-      '<li><b>Voeg materiaal toe</b><span>Klik of sleep voertuigen, borden en markeringen uit de lijst links.</span></li>'+
-      '<li><b>Pas aan en gebruik</b><span>Rechts stel je het gekozen onderdeel in. Presenteer op het digibord, sla op als afbeelding of druk een werkblad af.</span></li>'+
-    '</ol>'+
-    '<div class="row welcome-row"><label class="check"><input type="checkbox" id="wHide"'+(welcomeOff()?' checked':'')+'> Niet meer tonen</label>'+
-    '<button class="btn" type="button" id="wEmpty">Leeg beginnen</button>'+
-    '<button class="btn primary" type="button" id="wGallery" autofocus>'+IC('grid')+'<span>Kies een voorbeeld</span></button></div>');
-  modalCard.querySelector('#wGallery').onclick=function(){openGallery();};
-  modalCard.querySelector('#wEmpty').onclick=function(){closeModal();startEmpty();};
-  modalCard.querySelector('#wHide').onchange=function(e){try{if(e.target.checked)localStorage.setItem(WELCOME_OFF,'1');else localStorage.removeItem(WELCOME_OFF);}catch(x){}};
+function newsUnseen(){try{return localStorage.getItem(NEWS_SEEN)!==NEWS.id;}catch(e){return false;}}
+/* klein strookje met enkele onderdelen uit de materiaallijst */
+function welcomeStrip(){
+  var its=[{type:'car',x:60,y:80,rot:0,color:'#d33a2f'},{type:'bike',x:150,y:80,rot:0,color:'#2d63c8'},{type:'ped',x:215,y:80,rot:0},
+    {type:'b15',x:300,y:150,side:'a'},{type:'light',x:390,y:150},{type:'stop',x:475,y:150}];
+  return '<svg viewBox="0 0 540 170" aria-hidden="true">'+its.map(function(o){
+    var c={id:90000+(++thumbSeq),s:1,rot:0};for(var k in o)c[k]=o[k];return itemSvg(sanitizeItem(c)||c);}).join('')+'</svg>';
 }
+var WSTEPS=[
+  {t:'Kies een situatie',
+   d:'Bovenaan kies je een kruispunt, een rechte weg of een rotonde. Of vertrek van een kant-en-klaar voorbeeld, sommige met een meerkeuzevraag.',
+   pic:function(){return '<div class="wpic three">'+['cross','road','round'].map(function(k){
+     return '<figure><div class="gal-thumb">'+thumbSvg(k,null)+'</div><figcaption>'+SCENE_NAMES[k]+'</figcaption></figure>';}).join('')+'</div>';}},
+  {t:'Voeg materiaal toe',
+   d:'Klik of sleep weggebruikers, verkeerslichten, borden en markeringen uit de lijst links. Klik een onderdeel aan om het rechts in te stellen: kleur, grootte, richtingaanwijzer …',
+   pic:function(){return '<div class="wpic strip">'+welcomeStrip()+'</div>';}},
+  {t:'Gebruik het in je les',
+   d:'Presenteren toont de tekening schermvullend op het digibord, Afspelen laat de voertuigen in de juiste volgorde vertrekken. Opslaan maakt een afbeelding voor je les, Werkblad drukt een blad af met een meerkeuzevraag.',
+   pic:function(){var p=XPRESETS.filter(function(x){return x.id==='c1';})[0];
+     return '<div class="wpic use"><div class="gal-thumb">'+thumbSvg('cross',p)+'</div><div class="wchips">'+
+       [['present','Presenteren'],['play','Afspelen'],['save','Opslaan'],['print','Werkblad']].map(function(b){return '<span>'+IC(b[0])+b[1]+'</span>';}).join('')+'</div></div>';}}
+];
+function showWelcome(){
+  var fresh=newsUnseen(),i=0;
+  try{localStorage.setItem(NEWS_SEEN,NEWS.id);}catch(e){}
+  var c=openDialog('<div class="about-hero"><img src="icons/icon.svg" alt=""><div><h2 id="modalTitle">'+(fresh&&!welcomeFirst()?'Nieuw in Verkeer in beeld':'Welkom bij Verkeer in beeld')+'</h2>'+
+    '<div>'+(fresh&&!welcomeFirst()?'Klik door de 3 stappen: bij elke stap zie je wat er veranderde.':'Teken verkeerssituaties voor je les, in drie stappen.')+'</div></div></div>'+
+    '<div class="wdots" role="tablist" aria-label="Stappen">'+WSTEPS.map(function(st,k){
+      var n=NEWS.items.filter(function(x){return x.step===k+1;}).length;
+      return '<button type="button" role="tab" data-ws="'+k+'"><b>'+(k+1)+'</b><span>'+st.t+'</span>'+(n?'<i>nieuw</i>':'')+'</button>';}).join('')+'</div>'+
+    '<div class="wbody" id="wBody"></div>'+
+    '<div class="row welcome-row"><label class="check"><input type="checkbox" id="wHide"'+(welcomeOff()?' checked':'')+'> Niet meer tonen</label>'+
+    '<span id="wBtns"></span></div>','welcome');
+  function show(k){
+    i=k;var st=WSTEPS[k],news=NEWS.items.filter(function(x){return x.step===k+1;});
+    c.querySelector('#wBody').innerHTML=st.pic()+'<h3>'+(k+1)+'. '+st.t+'</h3><p>'+st.d+'</p>'+
+      (news.length?'<div class="wnews"><b>Nieuw</b><ul>'+news.map(function(x){return '<li>'+escHtml(x.t)+'</li>';}).join('')+'</ul></div>':'');
+    [].forEach.call(c.querySelectorAll('[data-ws]'),function(b){var on=+b.getAttribute('data-ws')===k;b.classList.toggle('on',on);b.setAttribute('aria-selected',on);});
+    c.querySelector('#wBtns').innerHTML=(k>0?'<button class="btn ghost" type="button" data-wgo="-1">'+IC('left')+'<span>Vorige</span></button>':'')+
+      (k<WSTEPS.length-1?'<button class="btn primary" type="button" data-wgo="1"><span>Volgende</span>'+IC('right')+'</button>':
+        '<button class="btn" type="button" id="wEmpty">Leeg beginnen</button><button class="btn primary" type="button" id="wGallery">'+IC('grid')+'<span>Kies een voorbeeld</span></button>');
+    var f=c.querySelector('#wBtns .primary');if(f)f.focus();
+  }
+  c.addEventListener('click',function(e){
+    var t=e.target.closest('[data-ws]');if(t){show(+t.getAttribute('data-ws'));return;}
+    t=e.target.closest('[data-wgo]');if(t){show(i+ +t.getAttribute('data-wgo'));return;}
+    if(e.target.closest('#wGallery')){openGallery();return;}
+    if(e.target.closest('#wEmpty')){closeModal();startEmpty();}
+  });
+  c.addEventListener('keydown',function(e){
+    if(e.target.tagName==='INPUT')return;
+    if(e.key==='ArrowRight'&&i<WSTEPS.length-1){show(i+1);e.preventDefault();}
+    if(e.key==='ArrowLeft'&&i>0){show(i-1);e.preventDefault();}
+  });
+  c.querySelector('#wHide').onchange=function(e){try{if(e.target.checked)localStorage.setItem(WELCOME_OFF,'1');else localStorage.removeItem(WELCOME_OFF);}catch(x){}};
+  show(0);
+}
+/* eerste bezoek: nog nooit een tekening of instelling bewaard */
+var firstVisit=(function(){try{return !localStorage.getItem(NEWS_SEEN)&&!localStorage.getItem(KEY);}catch(e){return true;}})();
+function welcomeFirst(){return firstVisit;}
 
 /* ---------- opslaan: één knop, twee keuzes ---------- */
 document.getElementById('bSave').onclick=function(){
@@ -1189,8 +1242,8 @@ document.getElementById('palette').addEventListener('toggle',function(){
 },true);
 drawBase();
 render();
-/* het welkomstscherm verschijnt bij elke keer openen, tenzij "niet meer tonen" aangevinkt is */
-if(!welcomeOff())setTimeout(showWelcome,250);
+/* het welkomstscherm verschijnt bij elke keer openen, tenzij "niet meer tonen" aangevinkt is; na een nieuwe versie altijd één keer */
+if(!welcomeOff()||newsUnseen())setTimeout(showWelcome,250);
 
 /* Offline werken en installeren als app (alleen via http(s), niet via file://). */
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){

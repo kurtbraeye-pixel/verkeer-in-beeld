@@ -386,6 +386,35 @@ body.present .presbar:hover,body.present .presbar:focus-within{opacity:1}
 .sheet footer{margin-top:8mm; font-size:8pt; color:#555}
 /* voorbeeld in het werkbladvenster: een verkleinde A4-pagina */
 .card.wide{max-width:1040px}
+/* welkomstscherm: rondleiding in 3 stappen */
+.card.welcome{max-width:640px}
+.wdots{display:grid; grid-template-columns:repeat(3,1fr); gap:var(--sp-2)}
+.wdots button{
+  font:inherit; color:var(--muted); background:none; border:0; border-top:3px solid var(--line); padding:var(--sp-2) 0 0; cursor:pointer;
+  display:flex; align-items:center; gap:var(--sp-2); text-align:left; font-size:var(--fs-sm);
+}
+.wdots button b{flex:none; width:22px; height:22px; border-radius:50%; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:var(--fs-xs); font-weight:600}
+.wdots button i{font-style:normal; font-size:var(--fs-xs); color:var(--sel); font-weight:500; margin-left:auto}
+.wdots button.on{color:var(--ink); border-top-color:var(--accent)}
+.wdots button.on b{background:var(--accent); color:var(--accent-ink)}
+.wbody{display:flex; flex-direction:column; gap:var(--sp-2); min-height:360px}
+.wbody h3{margin:var(--sp-1) 0 0; font-size:var(--fs-lg); font-weight:600}
+.wbody p{margin:0; font-size:var(--fs-md); color:var(--muted)}
+.wpic{background:var(--desk); border-radius:var(--r-lg); padding:var(--sp-3); height:180px; box-sizing:border-box}
+.wpic.three{display:grid; grid-template-columns:repeat(3,1fr); gap:var(--sp-3)}
+.wpic figure{margin:0; display:flex; flex-direction:column; gap:4px; min-width:0}
+.wpic.three{height:auto}
+.wpic figcaption{font-size:var(--fs-xs); color:var(--muted); text-align:center}
+.wpic.strip svg{width:100%; height:100%; display:block}
+.wpic.use{display:flex; gap:var(--sp-3); align-items:center}
+.wpic.use .gal-thumb{height:100%; flex:none}
+.wchips{display:flex; flex-wrap:wrap; gap:var(--sp-2)}
+.wchips span{display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:99px; background:var(--surface); border:1px solid var(--line); font-size:var(--fs-sm)}
+.wnews{border-left:3px solid var(--sel); background:var(--surface-2); border-radius:0 var(--r-md) var(--r-md) 0; padding:var(--sp-2) var(--sp-3); font-size:var(--fs-sm)}
+.wnews b{color:var(--sel); font-weight:600}
+.wnews ul{margin:4px 0 0; padding-left:18px; display:flex; flex-direction:column; gap:3px}
+#wBtns{display:flex; flex-wrap:wrap; justify-content:flex-end; gap:var(--sp-2)}
+@media (max-width:560px){.wdots span{display:none} .wpic.use .wchips{display:none} .welcome-row{flex-wrap:wrap} .welcome-row .check{flex-basis:100%}}
 .ws{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,400px); gap:var(--sp-5); align-items:start}
 .wsForm{display:flex; flex-direction:column; gap:var(--sp-3)}
 .wsPrevWrap{background:var(--desk); border-radius:var(--r-lg); padding:var(--sp-3); max-height:68vh; overflow:auto}

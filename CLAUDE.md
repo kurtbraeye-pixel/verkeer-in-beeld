@@ -14,6 +14,8 @@ Gemaakt door Kurt Braeye (Ligo Midden- en Zuid-West-Vlaanderen). Communiceer in 
    met `Storage.prototype.setItem` geblokkeerd vóór het herladen (anders overschrijft `pagehide` de herstelde tekening).
    De gebruiker tekent vaak zelf in het testvenster.
 3. Verhoog `VERSION` in `sw.js` en zet nieuwe bestanden in de lijst `FILES`.
+   Is de wijziging belangrijk voor collega's? Pas dan `NEWS` in `js/app.js` aan (nieuwe `id`, items per stap 1–3):
+   iedereen krijgt het welkomstscherm dan één keer te zien, ook wie "niet meer tonen" aanvinkte.
 4. Toon wat er veranderde en **vraag akkoord voordat je commit en pusht**. Pas na "ja, zet online": commit, push,
    wacht op de Pages-build (`gh api repos/kurtbraeye-pixel/verkeer-in-beeld/pages/builds/latest`) en controleer de site.
 
