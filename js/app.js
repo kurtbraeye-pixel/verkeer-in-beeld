@@ -749,6 +749,12 @@ Object.keys(PSETS).forEach(function(k){
   document.getElementById(PSETS[k].el).addEventListener('click',function(){openGallery(k);});
 });
 
+/* leeg tekenvlak voor de huidige situatie (ongedaan maken brengt de vorige tekening terug) */
+function startEmpty(){
+  if(items.length)pushHistory(snap());
+  items=[];store[scene].items=items;store[scene].preset=null;selId=null;drawBase();render();presLabel();
+}
+
 /* ---------- galerij met miniaturen ---------- */
 var SCENE_NAMES={cross:'Kruispunt',road:'Rechte weg',round:'Rotonde'},thumbSeq=0;
 function sceneDefaults(k,p){
@@ -786,10 +792,8 @@ function openGallery(which){
     var card=e.target.closest('[data-pid],[data-empty]');if(!card)return;
     var k=which;closeModal();
     if(scene!==k)setScene(k);
-    if(card.hasAttribute('data-empty')){
-      if(items.length)pushHistory(snap());
-      items=[];store[scene].items=items;store[scene].preset=null;selId=null;drawBase();render();presLabel();
-    }else applyPreset(PSETS[k].list.filter(function(p){return p.id===card.getAttribute('data-pid');})[0]);
+    if(card.hasAttribute('data-empty'))startEmpty();
+    else applyPreset(PSETS[k].list.filter(function(p){return p.id===card.getAttribute('data-pid');})[0]);
   });
 }
 
@@ -884,8 +888,9 @@ document.getElementById('bAbout').onclick=function(){
     '<div class="row"><button class="btn primary" type="button" data-close autofocus>Sluiten</button></div>');
 };
 
-/* ---------- welkomstscherm (alleen bij het eerste bezoek) ---------- */
+/* ---------- welkomstscherm (bij elke keer openen) ---------- */
 function showWelcome(){
+  var hasWork=store.cross.items.length||store.road.items.length||store.round.items.length;
   openDialog('<div class="about-hero"><img src="icons/icon.svg" alt=""><div><h2 id="modalTitle">Welkom bij Verkeer in beeld</h2>'+
     '<div>Teken verkeerssituaties voor je les, in een paar klikken.</div></div></div>'+
     '<ol class="steps">'+
@@ -893,9 +898,11 @@ function showWelcome(){
       '<li><b>Voeg materiaal toe</b><span>Klik of sleep voertuigen, borden en markeringen uit de lijst links.</span></li>'+
       '<li><b>Pas aan en gebruik</b><span>Rechts stel je het gekozen onderdeel in. Presenteer op het digibord, sla op als afbeelding of druk een werkblad af.</span></li>'+
     '</ol>'+
-    '<div class="row"><button class="btn" type="button" data-close>Leeg beginnen</button>'+
+    '<div class="row">'+(hasWork?'<button class="btn ghost" type="button" data-close>Verder met mijn tekening</button>':'')+
+    '<button class="btn" type="button" id="wEmpty">Leeg beginnen</button>'+
     '<button class="btn primary" type="button" id="wGallery" autofocus>'+IC('grid')+'<span>Kies een voorbeeld</span></button></div>');
   modalCard.querySelector('#wGallery').onclick=function(){openGallery();};
+  modalCard.querySelector('#wEmpty').onclick=function(){closeModal();startEmpty();};
 }
 
 /* ---------- opslaan: één knop, twee keuzes ---------- */
@@ -1013,9 +1020,8 @@ document.getElementById('palette').addEventListener('toggle',function(){
 },true);
 drawBase();
 render();
-try{
-  if(!localStorage.getItem('verkeer-welkom-gezien')){localStorage.setItem('verkeer-welkom-gezien','1');setTimeout(showWelcome,250);}
-}catch(e){}
+/* het welkomstscherm verschijnt bij elke keer openen */
+setTimeout(showWelcome,250);
 
 /* Offline werken en installeren als app (alleen via http(s), niet via file://). */
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){
