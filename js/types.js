@@ -55,12 +55,35 @@ function shade(hex,t){
   r=Math.round(r+(m-r)*k);g=Math.round(g+(m-g)*k);b=Math.round(b+(m-b)*k);
   return '#'+((1<<24)|(r<<16)|(g<<8)|b).toString(16).slice(1);
 }
+/* Tekenregels (zie CLAUDE.md): vaste lijndiktes, schaduw en kleuren voor alle tekeningen */
+var STYLE={
+  lw:{big:2.5,small:2,detail:1.5,fine:1.2},          /* lijndiktes bij 100% */
+  shadow:[3,4],shadowOpacity:.18,                     /* zachte schaduw onder alles wat boven de weg uitsteekt */
+  col:{tyre:'#1c1c1e',head:'#ffe27a',rear:'#c8202a',glassFront:'#bfe0ee',glassRear:'#9fc4d6',
+       skin:'#f0c29b',hair:'#4a3426',blink:'#ffa400',brake:'#ff1f1f',beacon:'#2f8bff'}
+};
+/* rand in een donkerdere tint van de eigen kleur */
+function edge(c){return shade(c,-.35);}
+/* schaduw: dezelfde vorm (svg-string) verschoven en half doorzichtig zwart; met it valt ze altijd rechtsonder,
+   ook als het onderdeel gedraaid of gespiegeld is */
+function shadowOf(shape,it){
+  var x=STYLE.shadow[0],y=STYLE.shadow[1];
+  if(it){var a=-(it.rot||0)*Math.PI/180,c=Math.cos(a),n=Math.sin(a),ox=x*c-y*n,oy=x*n+y*c;x=ox*(it.flip||1);y=oy;}
+  return '<g transform="translate('+x.toFixed(2)+' '+y.toFixed(2)+')" fill="#000" stroke="none" opacity="'+STYLE.shadowOpacity+'">'+shape+'</g>';
+}
+/* buitenspiegel: klein huisje op een armpje, links en rechts op hoogte y */
+function mirrors(x,y,c,d){
+  var m=function(s){return '<g transform="scale('+s+' 1)"><path d="M'+x+' '+(y+3)+'H'+(x+4)+'" stroke="'+d+'" stroke-width="2.4"/>'+
+    '<rect x="'+(x+3)+'" y="'+y+'" width="6" height="7" rx="2.2" fill="'+c+'" stroke="'+d+'" stroke-width="'+STYLE.lw.fine+'"/></g>';};
+  return m(1)+m(-1);
+}
 function wheels(list){
-  return list.map(function(p){return '<rect x="'+p[0]+'" y="'+p[1]+'" width="8" height="'+(p[2]||22)+'" rx="3" fill="#1c1c1e"/>';}).join('');
+  return list.map(function(p){return '<rect x="'+p[0]+'" y="'+p[1]+'" width="8" height="'+(p[2]||22)+'" rx="3" fill="'+STYLE.col.tyre+'"/>';}).join('');
 }
 function lights(front,back,fw,bw){
-  return '<rect x="'+(-fw)+'" y="'+front+'" width="13" height="5" rx="2" fill="#ffe27a"/><rect x="'+(fw-13)+'" y="'+front+'" width="13" height="5" rx="2" fill="#ffe27a"/>'+
-         '<rect x="'+(-bw)+'" y="'+back+'" width="13" height="4" rx="2" fill="#c8202a"/><rect x="'+(bw-13)+'" y="'+back+'" width="13" height="4" rx="2" fill="#c8202a"/>';
+  var h=STYLE.col.head,r=STYLE.col.rear;
+  return '<rect x="'+(-fw)+'" y="'+front+'" width="13" height="5" rx="2" fill="'+h+'"/><rect x="'+(fw-13)+'" y="'+front+'" width="13" height="5" rx="2" fill="'+h+'"/>'+
+         '<rect x="'+(-bw)+'" y="'+back+'" width="13" height="4" rx="2" fill="'+r+'"/><rect x="'+(bw-13)+'" y="'+back+'" width="13" height="4" rx="2" fill="'+r+'"/>';
 }
 function octagon(r,cy){
   var pts=[];for(var i=0;i<8;i++){var a=(i*45+22.5)*Math.PI/180;pts.push((r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1));}
@@ -76,7 +99,7 @@ function dashes(h,len,gap,wid,col){
 }
 /* bevoegd persoon in bovenaanzicht; de voorkant (klep van de pet, voeten) wijst naar +y,
    zodat hij met "Komt van" naar de naderende bestuurder kijkt */
-function agent(arm){
+function agent(arm,it){
   var vest='#d4e03a',sleeve='#2a4a86',navy='#1d3566',glove='#ffffff',s='';
   s+='<ellipse cx="-9" cy="13" rx="5" ry="7.5" fill="#111"/><ellipse cx="9" cy="13" rx="5" ry="7.5" fill="#111"/>';
   if(arm==='side'){
@@ -93,7 +116,8 @@ function agent(arm){
   if(arm!=='side'){
     s+='<circle cx="23" cy="-4" r="8.5" fill="'+sleeve+'"/><circle cx="23" cy="-5" r="7" fill="'+glove+'" stroke="#9aa3a9" stroke-width="1.2"/>';
   }
-  return '<g transform="scale(1.3)">'+s+'</g>';
+  var sh=arm==='side'?'<rect x="-64" y="-6" width="128" height="12" rx="6"/><ellipse cx="0" cy="2" rx="24" ry="14"/>':'<ellipse cx="0" cy="2" rx="26" ry="14"/>';
+  return '<g transform="scale(1.3)">'+shadowOf(sh,it)+s+'</g>';
 }
 /* ---------- borden: verhoudingen zoals de officiële SB250-borden (verkeersbord.be) ---------- */
 var RED='#d3202a',INK='#111',ORANGE='#e8801a';
@@ -281,12 +305,17 @@ function glow(pts,on){
 /* stretch: 'w' | 'h' | 'wh' = mag uitgerekt worden; tw/th = afmetingen op het tegeltje */
 var TYPES={
   car:{label:'Auto',kind:'vehicle',signals:true,color:true,w:70,h:124,draw:function(it){
-    var c=it.color,d=shade(c,-.35),l=shade(c,.25);
-    return wheels([[-36,-42],[28,-42],[-36,26],[28,26]])+
-      '<rect x="-32" y="-62" width="64" height="124" rx="24" fill="'+c+'" stroke="'+d+'" stroke-width="2.5"/>'+
-      '<path d="M-23 -26Q0 -34 23 -26L19 -6H-19Z" fill="#bfe0ee" stroke="'+d+'" stroke-width="1.5"/>'+
-      '<rect x="-23" y="-6" width="46" height="32" rx="7" fill="'+l+'" stroke="'+d+'" stroke-width="1.5"/>'+
-      '<path d="M-19 26H19L23 40Q0 46 -23 40Z" fill="#9fc4d6" stroke="'+d+'" stroke-width="1.5"/>'+
+    var c=it.color,d=edge(c),l=shade(c,.25),lw=STYLE.lw,g=STYLE.col;
+    return shadowOf('<rect x="-34" y="-62" width="68" height="124" rx="24"/>',it)+
+      wheels([[-36,-42],[28,-42],[-36,26],[28,26]])+mirrors(31,-24,c,d)+
+      '<rect x="-32" y="-62" width="64" height="124" rx="24" fill="'+c+'" stroke="'+d+'" stroke-width="'+lw.big+'"/>'+
+      /* motorkap met twee lichte plooien */
+      '<path d="M-14 -56Q-17 -42 -18 -30M14 -56Q17 -42 18 -30" stroke="'+d+'" stroke-width="'+lw.fine+'" fill="none" opacity=".55"/>'+
+      '<path d="M-23 -26Q0 -34 23 -26L19 -6H-19Z" fill="'+g.glassFront+'" stroke="'+d+'" stroke-width="'+lw.detail+'"/>'+
+      /* zijruiten langs het dak */
+      '<path d="M-24 -4L-26.5 24M24 -4L26.5 24" stroke="'+g.glassRear+'" stroke-width="3" stroke-linecap="round"/>'+
+      '<rect x="-21" y="-6" width="42" height="32" rx="7" fill="'+l+'" stroke="'+d+'" stroke-width="'+lw.detail+'"/>'+
+      '<path d="M-19 26H19L23 40Q0 46 -23 40Z" fill="'+g.glassRear+'" stroke="'+d+'" stroke-width="'+lw.detail+'"/>'+
       lights(-60,56,25,25);
   }},
   carD:{label:'Defecte auto',kind:'vehicle',signals:true,color:true,w:70,h:124,draw:function(it){
@@ -296,38 +325,47 @@ var TYPES={
     return TYPES.truck.draw(it)+hazard([[-31,-104],[31,-104],[-34,104],[34,104]])+triangle(0,138);
   }},
   bus:{label:'Bus',kind:'vehicle',signals:true,color:true,w:76,h:204,draw:function(it){
-    var c=it.color,d=shade(c,-.35),l=shade(c,.25);
-    return wheels([[-38,-72,26],[30,-72,26],[-38,44,26],[30,44,26]])+
-      '<rect x="-34" y="-102" width="68" height="204" rx="16" fill="'+c+'" stroke="'+d+'" stroke-width="2.5"/>'+
-      '<rect x="-27" y="-96" width="54" height="26" rx="6" fill="#bfe0ee" stroke="'+d+'" stroke-width="1.5"/>'+
-      '<rect x="-27" y="-64" width="54" height="158" rx="8" fill="'+l+'" stroke="'+d+'" stroke-width="1.5"/>'+
+    var c=it.color,d=edge(c),l=shade(c,.25),lw=STYLE.lw,g=STYLE.col;
+    return shadowOf('<rect x="-34" y="-102" width="68" height="204" rx="16"/>',it)+
+      wheels([[-38,-72,26],[30,-72,26],[-38,44,26],[30,44,26]])+
+      /* grote busspiegels die naar voren steken */
+      '<path d="M-33 -90Q-40 -96 -40 -104M33 -90Q40 -96 40 -104" stroke="'+d+'" stroke-width="2.2" fill="none"/>'+
+      '<rect x="-43" y="-110" width="6" height="9" rx="2" fill="#2b2e33"/><rect x="37" y="-110" width="6" height="9" rx="2" fill="#2b2e33"/>'+
+      '<rect x="-34" y="-102" width="68" height="204" rx="16" fill="'+c+'" stroke="'+d+'" stroke-width="'+lw.big+'"/>'+
+      '<rect x="-27" y="-96" width="54" height="26" rx="6" fill="'+g.glassFront+'" stroke="'+d+'" stroke-width="'+lw.detail+'"/>'+
+      '<path d="M-31 -64V92M31 -64V92" stroke="'+g.glassRear+'" stroke-width="2.6" stroke-dasharray="20 3"/>'+
+      '<rect x="-27" y="-64" width="54" height="152" rx="8" fill="'+l+'" stroke="'+d+'" stroke-width="'+lw.detail+'"/>'+
       '<rect x="-14" y="-44" width="28" height="22" rx="3" fill="#f5f7f8" opacity=".85"/><rect x="-14" y="6" width="28" height="22" rx="3" fill="#f5f7f8" opacity=".85"/><rect x="-14" y="56" width="28" height="22" rx="3" fill="#f5f7f8" opacity=".85"/>'+
+      '<rect x="-22" y="92" width="44" height="6" rx="2" fill="'+g.glassRear+'" stroke="'+d+'" stroke-width="'+lw.fine+'"/>'+
       lights(-100,98,28,28);
   }},
   truck:{label:'Vrachtwagen',kind:'vehicle',signals:true,color:true,w:78,h:214,draw:function(it){
-    var c=it.color,d=shade(c,-.35),l=shade(c,.25),ribs='';
-    for(var y=-14;y<100;y+=24)ribs+='<line x1="-36" y1="'+y+'" x2="36" y2="'+y+'" stroke="#c4cbd0" stroke-width="2"/>';
-    return wheels([[-39,-92],[31,-92],[-39,58,30],[31,58,30]])+
+    var c=it.color,d=edge(c),l=shade(c,.25),box='#eef1f3',bd=edge(box),lw=STYLE.lw,ribs='';
+    for(var y=-14;y<100;y+=24)ribs+='<line x1="-36" y1="'+y+'" x2="36" y2="'+y+'" stroke="#c4cbd0" stroke-width="'+lw.small+'"/>';
+    return shadowOf('<rect x="-36" y="-38" width="72" height="144" rx="6"/><rect x="-33" y="-107" width="66" height="66" rx="14"/>',it)+
+      wheels([[-39,-92],[31,-92],[-39,58,30],[31,58,30]])+mirrors(32,-96,c,d)+
       '<rect x="-10" y="-44" width="20" height="10" fill="#444"/>'+
-      '<rect x="-36" y="-38" width="72" height="144" rx="6" fill="#eef1f3" stroke="#9aa3a9" stroke-width="2"/>'+ribs+
-      '<rect x="-33" y="-107" width="66" height="66" rx="14" fill="'+c+'" stroke="'+d+'" stroke-width="2.5"/>'+
-      '<rect x="-25" y="-98" width="50" height="18" rx="5" fill="#bfe0ee" stroke="'+d+'" stroke-width="1.5"/>'+
-      '<rect x="-25" y="-76" width="50" height="28" rx="6" fill="'+l+'" stroke="'+d+'" stroke-width="1.5"/>'+
+      '<rect x="-36" y="-38" width="72" height="144" rx="6" fill="'+box+'" stroke="'+bd+'" stroke-width="'+lw.small+'"/>'+ribs+
+      '<rect x="-33" y="-107" width="66" height="66" rx="14" fill="'+c+'" stroke="'+d+'" stroke-width="'+lw.big+'"/>'+
+      '<rect x="-25" y="-98" width="50" height="18" rx="5" fill="'+STYLE.col.glassFront+'" stroke="'+d+'" stroke-width="'+lw.detail+'"/>'+
+      '<rect x="-25" y="-76" width="50" height="28" rx="6" fill="'+l+'" stroke="'+d+'" stroke-width="'+lw.detail+'"/>'+
       lights(-106,102,28,30);
   }},
   brom:{label:'Bromfiets',kind:'vehicle',color:true,signals:true,w:40,h:88,draw:function(it){
-    var c=it.color,d=shade(c,-.35),jacket='#3d4f73';
-    return '<rect x="-4" y="-44" width="8" height="21" rx="3" fill="#1c1c1e"/><rect x="-4" y="23" width="8" height="21" rx="3" fill="#1c1c1e"/>'+
+    var c=it.color,d=edge(c),jacket='#3d4f73';
+    return shadowOf('<rect x="-4" y="-44" width="8" height="88" rx="3"/><ellipse cx="0" cy="4" rx="13" ry="9"/>',it)+
+      '<rect x="-4" y="-44" width="8" height="21" rx="3" fill="'+STYLE.col.tyre+'"/><rect x="-4" y="23" width="8" height="21" rx="3" fill="'+STYLE.col.tyre+'"/>'+
       '<rect x="-18" y="-31" width="36" height="4" rx="2" fill="#333"/>'+
       '<path d="M-9 -27Q0 -35 9 -27L8 28Q0 34 -8 28Z" fill="'+c+'" stroke="'+d+'" stroke-width="1.5"/>'+
       '<path d="M-11 -2L-16 -27M11 -2L16 -27" stroke="'+jacket+'" stroke-width="5" stroke-linecap="round"/>'+
       '<ellipse cx="0" cy="4" rx="13" ry="9" fill="'+jacket+'"/>'+
       '<circle cx="0" cy="-5" r="8.5" fill="#2b2e33" stroke="#111" stroke-width="1.5"/><path d="M-5.5 -10Q0 -13.5 5.5 -10" stroke="#8fb8d0" stroke-width="2.2" fill="none"/>'+
-      '<circle cx="0" cy="-42" r="2.8" fill="#ffe27a"/><rect x="-3" y="41" width="6" height="3" rx="1" fill="#c8202a"/>';
+      '<circle cx="0" cy="-42" r="2.8" fill="'+STYLE.col.head+'"/><rect x="-3" y="41" width="6" height="3" rx="1" fill="'+STYLE.col.rear+'"/>';
   }},
   motor:{label:'Motorfiets',kind:'vehicle',color:true,signals:true,w:48,h:106,draw:function(it){
-    var c=it.color,d=shade(c,-.35),l=shade(c,.2),jacket='#2b2e33';
-    return '<rect x="-6" y="-53" width="12" height="26" rx="5" fill="#1c1c1e"/><rect x="-7" y="26" width="14" height="27" rx="5" fill="#1c1c1e"/>'+
+    var c=it.color,d=edge(c),l=shade(c,.2),jacket='#2b2e33';
+    return shadowOf('<rect x="-7" y="-53" width="14" height="106" rx="5"/><ellipse cx="0" cy="8" rx="15" ry="10"/>',it)+
+      '<rect x="-6" y="-53" width="12" height="26" rx="5" fill="'+STYLE.col.tyre+'"/><rect x="-7" y="26" width="14" height="27" rx="5" fill="'+STYLE.col.tyre+'"/>'+
       '<rect x="-23" y="-36" width="46" height="5" rx="2.5" fill="#333"/>'+
       '<path d="M-12 -32Q0 -42 12 -32L13 -6Q0 0 -13 -6Z" fill="'+c+'" stroke="'+d+'" stroke-width="1.5"/>'+
       '<path d="M-9 -28Q0 -34 9 -28L9 -14Q0 -11 -9 -14Z" fill="'+l+'"/>'+
@@ -335,58 +373,65 @@ var TYPES={
       '<path d="M-13 2L-21 -32M13 2L21 -32" stroke="'+jacket+'" stroke-width="6" stroke-linecap="round"/>'+
       '<ellipse cx="0" cy="8" rx="15" ry="10" fill="'+jacket+'"/>'+
       '<circle cx="0" cy="-2" r="9.5" fill="'+c+'" stroke="#111" stroke-width="1.5"/><path d="M-6 -7.5Q0 -11.5 6 -7.5" stroke="#1d2024" stroke-width="2.6" fill="none"/>'+
-      '<circle cx="0" cy="-50" r="3.4" fill="#ffe27a"/><rect x="-4" y="50" width="8" height="3" rx="1" fill="#c8202a"/>';
+      '<circle cx="0" cy="-50" r="3.4" fill="'+STYLE.col.head+'"/><rect x="-4" y="50" width="8" height="3" rx="1" fill="'+STYLE.col.rear+'"/>';
   }},
   tram:{label:'Tram',kind:'vehicle',color:true,signals:true,w:76,h:300,draw:function(it){
-    var c=it.color,d=shade(c,-.35),l=shade(c,.25),s='';
+    var c=it.color,d=edge(c),l=shade(c,.25),s='';
     function car(y0,y1,front,back){
       var r='<rect x="-36" y="'+y0+'" width="72" height="'+(y1-y0)+'" rx="'+(front||back?14:4)+'" fill="'+c+'" stroke="'+d+'" stroke-width="2.5"/>';
       r+='<rect x="-28" y="'+(y0+10)+'" width="56" height="'+(y1-y0-20)+'" rx="6" fill="'+l+'" stroke="'+d+'" stroke-width="1.2"/>';
-      if(front)r+='<path d="M-28 '+(y0+6)+'Q0 '+(y0-2)+' 28 '+(y0+6)+'L26 '+(y0+22)+'H-26Z" fill="#bfe0ee" stroke="'+d+'" stroke-width="1.2"/>';
-      if(back)r+='<path d="M-28 '+(y1-6)+'Q0 '+(y1+2)+' 28 '+(y1-6)+'L26 '+(y1-22)+'H-26Z" fill="#bfe0ee" stroke="'+d+'" stroke-width="1.2"/>';
+      if(front)r+='<path d="M-28 '+(y0+6)+'Q0 '+(y0-2)+' 28 '+(y0+6)+'L26 '+(y0+22)+'H-26Z" fill="'+STYLE.col.glassFront+'" stroke="'+d+'" stroke-width="1.2"/>';
+      if(back)r+='<path d="M-28 '+(y1-6)+'Q0 '+(y1+2)+' 28 '+(y1-6)+'L26 '+(y1-22)+'H-26Z" fill="'+STYLE.col.glassFront+'" stroke="'+d+'" stroke-width="1.2"/>';
       return r;
     }
+    s+=shadowOf('<rect x="-36" y="-150" width="72" height="300" rx="14"/>',it)+mirrors(35,-134,c,d);
     s+=car(-150,-6,true,false)+car(6,150,false,true);
     s+='<rect x="-30" y="-8" width="60" height="16" fill="#555b60"/><path d="M-30 -4H30M-30 0H30M-30 4H30" stroke="#3c4145" stroke-width="1.2"/>';
     s+='<path d="M-14 -90L14 -60M14 -90L-14 -60" stroke="#2b2e33" stroke-width="2.5"/><rect x="-18" y="-77" width="36" height="4" rx="2" fill="#2b2e33"/>';
-    s+='<rect x="-30" y="-148" width="12" height="5" rx="2" fill="#ffe27a"/><rect x="18" y="-148" width="12" height="5" rx="2" fill="#ffe27a"/>';
-    s+='<rect x="-30" y="143" width="12" height="5" rx="2" fill="#c8202a"/><rect x="18" y="143" width="12" height="5" rx="2" fill="#c8202a"/>';
+    s+='<rect x="-30" y="-148" width="12" height="5" rx="2" fill="'+STYLE.col.head+'"/><rect x="18" y="-148" width="12" height="5" rx="2" fill="'+STYLE.col.head+'"/>';
+    s+='<rect x="-30" y="143" width="12" height="5" rx="2" fill="'+STYLE.col.rear+'"/><rect x="18" y="143" width="12" height="5" rx="2" fill="'+STYLE.col.rear+'"/>';
     return s;
   }},
   bike:{label:'Fiets',kind:'vehicle',color:true,w:34,h:76,draw:function(it){
-    var c=it.color,d=shade(c,-.35);
-    return '<rect x="-3" y="-37" width="6" height="28" rx="3" fill="#222"/><rect x="-3" y="9" width="6" height="28" rx="3" fill="#222"/>'+
+    var c=it.color,d=edge(c),lw=STYLE.lw,g=STYLE.col;
+    return shadowOf('<rect x="-3" y="-37" width="6" height="74" rx="3"/><ellipse cx="0" cy="-2" rx="14" ry="8"/>',it)+
+      '<rect x="-3" y="-37" width="6" height="28" rx="3" fill="'+g.tyre+'"/><rect x="-3" y="9" width="6" height="28" rx="3" fill="'+g.tyre+'"/>'+
       '<line x1="0" y1="-12" x2="0" y2="12" stroke="#555" stroke-width="3"/>'+
+      '<rect x="-4" y="20" width="8" height="10" rx="2" fill="#555b60"/>'+   /* bagagedrager */
       '<line x1="-15" y1="-22" x2="15" y2="-22" stroke="#333" stroke-width="3.5" stroke-linecap="round"/>'+
-      '<path d="M-11 -4L-14 -22M11 -4L14 -22" stroke="'+c+'" stroke-width="5" stroke-linecap="round" fill="none"/>'+
-      '<ellipse cx="0" cy="-2" rx="14" ry="8" fill="'+c+'" stroke="'+d+'" stroke-width="1.5"/>'+
-      '<circle cx="0" cy="-3" r="7.5" fill="#3b3f45" stroke="#1d2024" stroke-width="1.5"/>'+
-      '<circle cx="0" cy="-36" r="3" fill="#ffe27a"/>';
+      '<path d="M-11 -4L-14 -21M11 -4L14 -21" stroke="'+c+'" stroke-width="5" stroke-linecap="round" fill="none"/>'+
+      '<circle cx="-14.5" cy="-22" r="3" fill="'+g.skin+'"/><circle cx="14.5" cy="-22" r="3" fill="'+g.skin+'"/>'+
+      '<ellipse cx="0" cy="-2" rx="14" ry="8" fill="'+c+'" stroke="'+d+'" stroke-width="'+lw.detail+'"/>'+
+      '<circle cx="0" cy="-3" r="7.5" fill="'+g.hair+'" stroke="'+shade(g.hair,-.35)+'" stroke-width="'+lw.fine+'"/>'+
+      '<circle cx="0" cy="-36" r="3" fill="'+g.head+'"/><rect x="-2.5" y="35" width="5" height="2.5" rx="1" fill="'+g.rear+'"/>';
   }},
   ambulance:{label:'Ziekenwagen',kind:'vehicle',signals:true,beacon:true,w:72,h:134,draw:function(it){
     var on=it.beacon!==false;
-    return wheels([[-36,-44],[28,-44],[-36,26],[28,26]])+
+    return shadowOf('<rect x="-34" y="-67" width="68" height="134" rx="18"/>',it)+
+      wheels([[-36,-44],[28,-44],[-36,26],[28,26]])+mirrors(31,-30,'#f5f7f8','#a9b2b8')+
       '<rect x="-32" y="-67" width="64" height="134" rx="18" fill="#f5f7f8" stroke="#a9b2b8" stroke-width="2.5"/>'+
-      '<path d="M-23 -34Q0 -42 23 -34L19 -14H-19Z" fill="#bfe0ee" stroke="#a9b2b8" stroke-width="1.5"/>'+
+      '<path d="M-23 -34Q0 -42 23 -34L19 -14H-19Z" fill="'+STYLE.col.glassFront+'" stroke="#a9b2b8" stroke-width="1.5"/>'+
       '<rect x="-23" y="-14" width="46" height="74" rx="7" fill="#e8edf0" stroke="#a9b2b8" stroke-width="1.5"/>'+
       '<rect x="-4" y="16" width="8" height="30" fill="#d62b2b"/><rect x="-15" y="27" width="30" height="8" fill="#d62b2b"/>'+
       lamp(-22,-11,44,8,on)+lights(-65,62,25,25)+glow([[-13,-7],[13,-7]],on);
   }},
   police:{label:'Politie',kind:'vehicle',signals:true,beacon:true,w:70,h:124,draw:function(it){
     var on=it.beacon!==false;
-    return wheels([[-36,-42],[28,-42],[-36,26],[28,26]])+
+    return shadowOf('<rect x="-34" y="-62" width="68" height="124" rx="24"/>',it)+
+      wheels([[-36,-42],[28,-42],[-36,26],[28,26]])+mirrors(31,-26,'#f2f4f6','#8a96a0')+
       '<rect x="-32" y="-62" width="64" height="124" rx="24" fill="#f2f4f6" stroke="#8a96a0" stroke-width="2.5"/>'+
       '<rect x="-30" y="-52" width="60" height="9" fill="#1b4f9c"/><rect x="-30" y="38" width="60" height="9" fill="#1b4f9c"/>'+
-      '<path d="M-23 -28Q0 -36 23 -28L19 -8H-19Z" fill="#bfe0ee" stroke="#8a96a0" stroke-width="1.5"/>'+
+      '<path d="M-23 -28Q0 -36 23 -28L19 -8H-19Z" fill="'+STYLE.col.glassFront+'" stroke="#8a96a0" stroke-width="1.5"/>'+
       '<rect x="-23" y="-8" width="46" height="32" rx="7" fill="#e6eaed" stroke="#8a96a0" stroke-width="1.5"/>'+
       lamp(-20,-5,19,8,on)+lamp(1,-5,19,8,on)+lights(-60,56,25,25)+glow([[-10,-1],[10,-1]],on);
   }},
   fire:{label:'Brandweer',kind:'vehicle',signals:true,beacon:true,w:78,h:164,draw:function(it){
     var r='',y,on=it.beacon!==false;
     for(y=-10;y<=70;y+=11)r+='<line x1="-15" y1="'+y+'" x2="15" y2="'+y+'" stroke="#cfd5d9" stroke-width="2.5"/>';
-    return wheels([[-40,-56],[32,-56],[-40,24],[32,24],[-40,52],[32,52]])+
+    return shadowOf('<rect x="-34" y="-82" width="68" height="164" rx="14"/>',it)+
+      wheels([[-40,-56],[32,-56],[-40,24],[32,24],[-40,52],[32,52]])+mirrors(33,-66,'#d4271f','#7e130e')+
       '<rect x="-34" y="-82" width="68" height="164" rx="14" fill="#d4271f" stroke="#7e130e" stroke-width="2.5"/>'+
-      '<path d="M-26 -72Q0 -80 26 -72L22 -50H-22Z" fill="#bfe0ee" stroke="#7e130e" stroke-width="1.5"/>'+
+      '<path d="M-26 -72Q0 -80 26 -72L22 -50H-22Z" fill="'+STYLE.col.glassFront+'" stroke="#7e130e" stroke-width="1.5"/>'+
       '<rect x="-26" y="-50" width="52" height="28" rx="6" fill="#e24b42" stroke="#7e130e" stroke-width="1.5"/>'+
       lamp(-20,-44,40,7,on)+
       '<line x1="-15" y1="-16" x2="-15" y2="76" stroke="#cfd5d9" stroke-width="4"/><line x1="15" y1="-16" x2="15" y2="76" stroke="#cfd5d9" stroke-width="4"/>'+r+
@@ -394,12 +439,14 @@ var TYPES={
   }},
   ped:{label:'Voetganger',kind:'object',follow:true,color:true,w:52,h:52,draw:function(it){
     /* bovenaanzicht, stappend: linkervoet voor, rechterarm voor */
-    var c=it.color,d=shade(c,-.3),skin='#f0c29b';
-    return '<ellipse cx="-8" cy="-15" rx="5" ry="8" fill="#2b2e33"/><ellipse cx="8" cy="13" rx="5" ry="8" fill="#2b2e33"/>'+
-      '<ellipse cx="-22" cy="7" rx="5.5" ry="10" fill="'+d+'"/><circle cx="-22" cy="16" r="4" fill="'+skin+'"/>'+
-      '<ellipse cx="22" cy="-7" rx="5.5" ry="10" fill="'+d+'"/><circle cx="22" cy="-16" r="4" fill="'+skin+'"/>'+
-      '<ellipse cx="0" cy="0" rx="21" ry="11" fill="'+c+'" stroke="'+d+'" stroke-width="2"/>'+
-      '<circle cx="0" cy="-1.5" r="10" fill="'+skin+'"/><circle cx="0" cy="1.5" r="9.5" fill="#4a3426"/>';
+    var c=it.color,d=edge(c),g=STYLE.col;
+    return shadowOf('<ellipse cx="0" cy="0" rx="21" ry="11"/><circle cx="0" cy="0" r="10"/>',it)+
+      '<ellipse cx="-8" cy="-15" rx="5" ry="8" fill="#2b2e33"/><ellipse cx="8" cy="13" rx="5" ry="8" fill="#2b2e33"/>'+
+      '<ellipse cx="-22" cy="7" rx="5.5" ry="10" fill="'+d+'"/><circle cx="-22" cy="16" r="4" fill="'+g.skin+'"/>'+
+      '<ellipse cx="22" cy="-7" rx="5.5" ry="10" fill="'+d+'"/><circle cx="22" cy="-16" r="4" fill="'+g.skin+'"/>'+
+      '<ellipse cx="0" cy="0" rx="21" ry="11" fill="'+c+'" stroke="'+d+'" stroke-width="'+STYLE.lw.small+'"/>'+
+      '<circle cx="0" cy="-1.5" r="10" fill="'+g.skin+'"/><circle cx="0" cy="1.5" r="9.5" fill="'+g.hair+'"/>'+
+      '<path d="M-5 -9Q0 -11 5 -9" stroke="'+shade(g.skin,-.2)+'" stroke-width="'+STYLE.lw.fine+'" fill="none"/>';
   }},
   light:{label:'Verkeerslicht',kind:'object',follow:true,w:40,h:150,draw:function(it){
     var L=[['#ff3b30','#4a1f1c'],['#ffa41b','#4a3716'],['#2fd66a','#15361f']];
@@ -525,8 +572,8 @@ var TYPES={
   kuil:{label:'Put in de weg',kind:'object',w:120,h:80,draw:function(){
     return '<ellipse cx="0" cy="0" rx="56" ry="36" fill="#8f8a82" stroke="#ece8de" stroke-width="3"/><ellipse cx="2" cy="2" rx="44" ry="26" fill="#2b2926"/><ellipse cx="4" cy="4" rx="30" ry="16" fill="#171615"/>';
   }},
-  agent_up:{label:'Bevoegd persoon',kind:'object',follow:true,onRoad:true,w:100,h:74,draw:function(){return agent('up');}},
-  agent_side:{label:'Bevoegd persoon',kind:'object',follow:true,onRoad:true,w:177,h:58,draw:function(){return agent('side');}},
+  agent_up:{label:'Bevoegd persoon',kind:'object',follow:true,onRoad:true,w:100,h:74,draw:function(it){return agent('up',it);}},
+  agent_side:{label:'Bevoegd persoon',kind:'object',follow:true,onRoad:true,w:177,h:58,draw:function(it){return agent('side',it);}},
   tag:{label:'Letter',kind:'object',w:44,h:44,draw:function(it){
     return '<circle r="20" fill="#fff" stroke="#2b2e33" stroke-width="2.5"/><text y="8" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="22" fill="#2b2e33">'+esc(it.text||'A')+'</text>';
   }},
