@@ -1,7 +1,7 @@
 /* De app zelf: toestand, materiaalpaneel, tekenvlak, werkbalk, opslaan en exporteren. */
 import {
   W,H,CX,CY,ROT,DIRLABEL,COLORS,SVGNS,SHAPES,ROUTES,
-  TYPES,SECTIONS,ENTRY,LINES,BERMS,LANEMARKS,POSTS,
+  TYPES,SECTIONS,ENTRY,LINES,BERMS,LANEMARKS,POSTS,B15LIST,
   copyPts,isPts,vbox,normV,follows,baseDims,dims,clamp,sanitizeItem
 } from './types.js';
 import {PRESETS,XPRESETS,RPRESETS} from './presets.js';
@@ -331,7 +331,7 @@ function renderInspector(it){
   document.getElementById('inspector').classList.toggle('has-sel',!!it);
   if(!it){body.hidden=true;empty.hidden=false;insKey='';return;}
   var d=TYPES[it.type];
-  var key=[it.id,it.type,(it.lanes||[]).join(''),d.color?it.color:'',it.state||'',it.beacon===false,!!it.solid,!!it.dash,it.blink||'',!!it.brake].join('|');
+  var key=[it.id,it.type,(it.lanes||[]).join(''),d.color?it.color:'',it.state||'',it.beacon===false,!!it.solid,!!it.dash,it.blink||'',!!it.brake,it.side||''].join('|');
   if(key===insKey){syncInspector(it);return;}
   insKey=key;empty.hidden=true;body.hidden=false;
   var h='<h2>'+escHtml(itemLabel(it))+'</h2>';
@@ -354,6 +354,9 @@ function renderInspector(it){
   if(d.beacon)h+='<label class="switch"><input type="checkbox" data-k="beacon"'+(it.beacon!==false?' checked':'')+'> Zwaailicht aan (prioritair)</label>';
   if(it.type==='c43')h+=insField('Maximumsnelheid','<select data-k="speed" aria-label="Maximumsnelheid">'+SPEEDS.map(function(v){
     return '<option value="'+v+'"'+((it.text||'50')===v?' selected':'')+'>'+v+' km/u</option>';}).join('')+'</select>');
+  if(it.type==='b15')h+=insField('Zijweg','<div class="b15grid">'+B15LIST.map(function(o){
+    return '<button type="button" data-b15="'+o[0]+'"'+((it.side||'a')===o[0]?' class="on"':'')+' title="'+o[1]+' (B15'+o[0]+')" aria-label="'+o[1]+'">'+
+      '<svg viewBox="-40 -92 80 78" aria-hidden="true">'+TYPES.b15.draw({side:o[0]})+'</svg></button>';}).join('')+'</div>');
   if(it.type==='tag')h+=insField('Letter','<input class="ins-text" type="text" data-k="text" maxlength="2" value="'+escHtml(it.text||'A')+'" aria-label="Letter">');
   if(it.type==='lanesign'){
     var L=it.lanes||['s','s'];
@@ -415,6 +418,7 @@ function syncInspector(it){
       mutate(function(){it.color=c;});return;
     }
     if(b.hasAttribute('data-blink')){var bl=b.getAttribute('data-blink');mutate(function(){if(bl)it.blink=bl;else delete it.blink;});return;}
+    if(b.hasAttribute('data-b15')){var sd=b.getAttribute('data-b15');mutate(function(){it.side=sd;});return;}
     if(b.hasAttribute('data-light')){var st=b.getAttribute('data-light');mutate(function(){it.state=st;});return;}
     if(b.hasAttribute('data-lane')){
       var i=+b.getAttribute('data-lane');

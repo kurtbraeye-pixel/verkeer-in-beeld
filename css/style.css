@@ -257,6 +257,12 @@ details.sec.sub .tile{background:var(--surface)}
 .seg{display:flex; gap:3px; padding:3px; background:var(--surface-2); border-radius:var(--r-md)}
 .seg button{flex:1; font:inherit; font-size:var(--fs-sm); height:28px; border:0; border-radius:var(--r-sm); background:transparent; color:var(--muted); cursor:pointer}
 .seg button:hover{color:var(--ink)}
+/* keuze van de B15-variant: kleine bordjes in een raster */
+.b15grid{display:grid; grid-template-columns:repeat(4,1fr); gap:var(--sp-1)}
+.b15grid button{aspect-ratio:1; padding:3px; border:1px solid var(--line); border-radius:var(--r-sm); background:var(--surface-2); cursor:pointer}
+.b15grid button:hover{border-color:var(--line-strong)}
+.b15grid button.on{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); background:var(--surface)}
+.b15grid svg{display:block; width:100%; height:100%}
 .seg button.on{background:var(--surface); color:var(--ink); font-weight:500; box-shadow:var(--sh-1)}
 .switch{display:flex; align-items:center; gap:var(--sp-2); font-size:var(--fs-sm); cursor:pointer}
 .switch input{accent-color:var(--accent); width:17px; height:17px; margin:0}

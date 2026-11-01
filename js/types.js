@@ -95,6 +95,72 @@ function agent(arm){
   }
   return '<g transform="scale(1.3)">'+s+'</g>';
 }
+/* ---------- borden: verhoudingen zoals de officiële SB250-borden (verkeersbord.be) ---------- */
+var RED='#d3202a',INK='#111',ORANGE='#e8801a';
+/* lijnletters voor cijfers en tekst op borden: overal dezelfde vorm, ook in een gedownloade afbeelding */
+function f(n){return +n.toFixed(2);}
+function pt(cx,cy,rx,ry,deg){var a=deg*Math.PI/180;return [cx+rx*Math.cos(a),cy+ry*Math.sin(a)];}
+function P(p){return f(p[0])+' '+f(p[1]);}
+function arc(rx,ry,large,sweep,p){return 'A'+f(rx)+' '+f(ry)+' 0 '+large+' '+sweep+' '+P(p);}
+
+/* ---------- lijnletters: middellijn in een vak van w breed en h hoog, lijndikte sw ---------- */
+function ell(cx,cy,rx,ry){return 'M'+P([cx-rx,cy])+arc(rx,ry,1,0,[cx+rx,cy])+arc(rx,ry,1,0,[cx-rx,cy]);}
+function six(w,h,map){
+  var r=w/2,rb=h*.33,cy=h-rb,a=pt(r,cy,r,rb,198),b=pt(r,cy,r,rb,18);
+  return 'M'+P(map([w*.82,0]))+'L'+P(map(a))+arc(r,rb,1,0,map(b))+arc(r,rb,1,0,map(a));
+}
+function glyph(ch,w,h,sw){
+  var r=w/2,e=sw/2,ru,rl;
+  switch(ch){
+    case '0':case 'O':return 'M0 '+f(r)+arc(r,r,0,1,[w,r])+'V'+f(h-r)+arc(r,r,0,1,[0,h-r])+'Z';
+    case '1':return 'M0 '+f(h*.28)+'L'+f(w)+' 0V'+f(h+e);
+    case '2':return 'M'+P(pt(r,r,r,r,195))+arc(r,r,0,1,pt(r,r,r,r,345))+'C'+f(w*1.02)+' '+f(h*.5)+' '+f(w*.2)+' '+f(h*.68)+' 0 '+f(h)+'H'+f(w+e);
+    case '3':ru=h*.23;rl=h/2-ru;
+      return 'M'+P(pt(r,ru,r*.9,ru,198))+arc(r*.9,ru,1,1,[r,2*ru])+arc(r,rl,1,1,pt(r,2*ru+rl,r,rl,158));
+    case '4':return 'M'+f(w*.74)+' '+f(h+e)+'V0L0 '+f(h*.7)+'H'+f(w+e);
+    case '5':rl=h*.32;var c=h-rl,a=pt(r,c,r,rl,212);return 'M'+f(w*.95)+' 0H'+f(a[0])+'V'+f(a[1])+arc(r,rl,1,1,pt(r,c,r,rl,150));
+    case '6':return six(w,h,function(p){return p;});
+    case '7':return 'M0 0H'+f(w)+'L'+f(w*.32)+' '+f(h+e);
+    case '8':ru=h*.235;return ell(r,ru,r*.88,ru)+ell(r,2*ru+(h/2-ru),r,h/2-ru);
+    case '9':return six(w,h,function(p){return [w-p[0],h-p[1]];});
+    case 'S':ru=h*.24;rl=h/2-ru;
+      return 'M'+P(pt(r,ru,r,ru,-28))+arc(r,ru,1,0,[r,2*ru])+arc(r,rl,1,1,pt(r,2*ru+rl,r,rl,152));
+    case 'T':return 'M'+f(-e)+' 0H'+f(w+e)+'M'+f(r)+' 0V'+f(h+e);
+    case 'P':var hb=h*.56;return 'M0 '+f(h+e)+'V0H'+f(w-hb/2)+arc(hb/2,hb/2,0,1,[w-hb/2,hb])+'H0';
+  }
+  return '';
+}
+var NARROW={'1':.62};
+/* tekst gecentreerd op (cx,cy); W = breedte van één teken, H = hoogte, buitenmaten */
+function letters(str,cx,cy,W,H,gap,sw,col){
+  var e=sw/2,ws=[],tot=-gap,i,x,d='';
+  for(i=0;i<str.length;i++){ws.push(W*(NARROW[str[i]]||1));tot+=ws[i]+gap;}
+  x=cx-tot/2;
+  for(i=0;i<str.length;i++){
+    d+='<path transform="translate('+f(x+e)+' '+f(cy-H/2+e)+')" d="'+glyph(str[i],ws[i]-sw,H-sw,sw)+'"/>';
+    x+=ws[i]+gap;
+  }
+  return '<g fill="none" stroke="'+col+'" stroke-width="'+sw+'" stroke-linejoin="miter" stroke-miterlimit="2.2">'+d+'</g>';
+}
+/* fiets in zijaanzicht met spaakwielen, kettingblad, zadel en stuur; naven op (±13,0), wielstraal 8.5 */
+function bicycle(col,sw){
+  var l='stroke="'+col+'" fill="none" stroke-linecap="round" stroke-linejoin="round"';
+  return '<g '+l+' stroke-width="'+sw+'">'+
+    '<circle cx="-13" cy="0" r="8.5"/><circle cx="13" cy="0" r="8.5"/>'+
+    '<path d="M-13 0L-.5 0L-4.6 -11.6ZM-4.6 -11.6L8.6 -11.6M10 -7.6L-.5 0M8.4 -12.6L10 -7.6Q11.6 -3.6 13 0M-4.6 -11.6L-5.2 -13.4"/>'+
+    '<path d="M-8 -13.8H-2.4" stroke-width="'+(sw*1.9)+'"/>'+
+    '<path d="M8.4 -12.6L8 -15.2Q6.6 -16.6 4.4 -16" />'+
+    '<circle cx="-.5" cy="0" r="2.6"/><path d="M-.5 0L1.6 3.4" />'+
+    '</g><circle cx="-13" cy="0" r="1.1" fill="'+col+'"/><circle cx="13" cy="0" r="1.1" fill="'+col+'"/><circle cx="-.5" cy="0" r=".9" fill="'+col+'"/>';
+}
+/* fietser als silhouet, rijdt naar rechts; zit op het zadel van bicycle() */
+function rider(col){
+  var l='stroke="'+col+'" fill="none" stroke-linecap="round" stroke-linejoin="round"';
+  return '<path d="M-4.4 -16.4L-1.6 -27.6" '+l+' stroke-width="5.4"/>'+
+    '<circle cx="-.2" cy="-32.2" r="3.1" fill="'+col+'"/><path d="M-3.2 -34.2Q-.4 -36.8 2.8 -34.4L3.6 -33.2H-3.4Z" fill="'+col+'"/>'+
+    '<path d="M-1.2 -26L2.6 -21.4L4.8 -16.4" '+l+' stroke-width="2.3"/>'+
+    '<path d="M-4.2 -15.6L3.6 -12.4L1.8 -3.2" '+l+' stroke-width="3.4"/><path d="M1.8 -3.2H4" '+l+' stroke-width="2.2"/>';
+}
 /* pijl op een rijstrookbord */
 function laneArrow(c,x){
   var s='',st='stroke="#fff" fill="none" stroke-width="6.5" stroke-linejoin="miter"';
@@ -124,7 +190,7 @@ function arrowTurn(){
 var FBLUE='#1f66ae';
 /* F97b (rechter rijstrook valt weg): pijl in de linker strook, de rechter strook buigt erin; F97 = gespiegeld */
 function mergePlate(){
-  return '<rect x="-22" y="-81" width="44" height="68" rx="5" fill="'+FBLUE+'" stroke="#fff" stroke-width="2.5"/>'+
+  return '<rect x="-22" y="-81" width="44" height="68" rx="5" fill="'+FBLUE+'" stroke="#fff" stroke-width="1.2"/>'+
     '<rect x="-18.5" y="-77.5" width="37" height="61" rx="3" fill="none" stroke="#fff" stroke-width="1.6"/>'+
     '<path d="M9 -17V-33L-6 -47" fill="none" stroke="#fff" stroke-width="8" stroke-linejoin="miter"/>'+
     '<rect x="-10" y="-58" width="8" height="41" fill="#fff"/><polygon points="-17,-57 5,-57 -6,-73" fill="#fff"/>';
@@ -134,23 +200,28 @@ function warnPlate(inner){
   return '<polygon points="0,-84 36,-20 -36,-20" fill="#f4f4f1" stroke="#d3202a" stroke-width="10" stroke-linejoin="round"/>'+inner;
 }
 /* B15: voorrang op de kruisende zijweg(en); de hoofdweg is de brede balk met punt */
-var B15SIDE={a:'M-15 -44H15',b:'M-1 -40L-14 -31',c:'M-15 -44H0',d:'M-1 -49L-10 -55',e:'M1 -49L10 -55',f:'M0 -44H15',g:'M1 -40L14 -31'};
 /* rond bord met rode rand: wit (verbod, C) of blauw (parkeren, E) */
 function ringPlate(fill,inner){
-  return '<circle cx="0" cy="-45" r="32" fill="#d3202a" stroke="#fff" stroke-width="2"/><circle cx="0" cy="-45" r="24" fill="'+fill+'"/>'+inner;
+  return '<circle cx="0" cy="-45" r="32" fill="'+RED+'" stroke="#fff" stroke-width="1.2"/><circle cx="0" cy="-45" r="22.8" fill="'+fill+'"/>'+inner;
 }
+/* rode schuine balk (of kruis) over een rond bord; loopt door tot in de rode ring */
+function banBar(w,cross){return '<path d="M-18.4 -63.4L18.4 -26.6'+(cross?'M18.4 -63.4L-18.4 -26.6':'')+'" stroke="'+RED+'" stroke-width="'+w+'"/>';}
 /* rond blauw bord met witte rand (gebod, D) */
 function bluePlate(inner){return '<circle cx="0" cy="-45" r="31" fill="#1b6ec2" stroke="#fff" stroke-width="3"/>'+inner;}
-/* vierkant blauw bord met witte rand (aanwijzing F, parking E9) */
+/* vierkant blauw bord met een witte lijn net binnen de rand (aanwijzing F, parking E9) */
 function squarePlate(h,inner){
   var y=-13-h;
-  return '<rect x="-25" y="'+y+'" width="50" height="'+h+'" rx="5" fill="'+FBLUE+'" stroke="#fff" stroke-width="2.5"/>'+
+  return '<rect x="-25" y="'+y+'" width="50" height="'+h+'" rx="5" fill="'+FBLUE+'" stroke="#fff" stroke-width="1.2"/>'+
     '<rect x="-21.5" y="'+(y+3.5)+'" width="43" height="'+(h-7)+'" rx="3" fill="none" stroke="#fff" stroke-width="1.6"/>'+inner;
 }
-/* stappende voetganger (pictogram), midden op x,y */
+/* stappende voetganger als silhouet (A21), voeten op (x,y) */
 function walker(x,y,k,col){
-  return '<g transform="translate('+x+' '+y+') scale('+k+')" stroke="'+col+'" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none">'+
-    '<circle cx="1" cy="-11" r="3.4" fill="'+col+'" stroke="none"/><path d="M0 -6L-1 4M-1 4L-6 12M-1 4L4 11M0 -5L-6 0M0 -5L6 -1"/></g>';
+  var l='stroke="'+col+'" fill="none" stroke-linecap="round" stroke-linejoin="round"';
+  return '<g transform="translate('+x+' '+y+') scale('+k+') translate(-10 -34)">'+
+    '<path d="M8 3.4Q10 .9 12 3.4V6.4Q10 8.8 8 6.4Z" fill="'+col+'"/>'+
+    '<path d="M7.6 9H12.4L13.2 19.4H6.8Z" fill="'+col+'" stroke="'+col+'" stroke-width="1" stroke-linejoin="round"/>'+
+    '<path d="M7.9 10L5.4 16.4L3.4 19.6" '+l+' stroke-width="2"/><path d="M12.1 10L14.4 16.2L16.6 18.8" '+l+' stroke-width="2"/>'+
+    '<path d="M8.8 19L6.6 26.2L3.6 33.2" '+l+' stroke-width="2.8"/><path d="M11.2 19L13.6 26.2L14.8 33.2H17.6" '+l+' stroke-width="2.8"/><path d="M3.6 33.2H5.6" '+l+' stroke-width="2.2"/></g>';
 }
 /* fiets in zijaanzicht (pictogram), midden op x,y */
 function bikeIcon(x,y,k,col,sw){
@@ -170,11 +241,23 @@ function roundArrows(){
 }
 /* C31: afslaan verboden; de pijl spiegelt, de rode balk blijft van linksboven naar rechtsonder */
 function turnBan(right){
-  var arrow='<path d="M5 -30V-46Q5 -52 -1 -52H-7" stroke="#111" stroke-width="5" fill="none"/><polygon points="-6,-59 -15,-52 -6,-45" fill="#111"/>';
-  return ringPlate('#fff',(right?mirror(arrow):arrow)+'<path d="M-16 -62L16 -28" stroke="#d3202a" stroke-width="5"/>');
+  var arrow='<path d="M5 -27V-47A6 6 0 0 0 -1 -53H-8.5" stroke="'+INK+'" stroke-width="4.6" fill="none"/><polygon points="-17,-53 -8,-60.5 -8,-45.5" fill="'+INK+'"/>';
+  return ringPlate('#fff',(right?mirror(arrow):arrow)+banBar(5.4));
 }
+/* B15: de hoofdweg is een brede balk (bijna een vijfde van de bordbreedte) met een punt boven en een zwaluwstaart onder;
+   de zijweg(en) zijn smalle balken: dwars (a, c, f) of schuin naar achter (b, g) of naar voor (d, e) */
+function b15arm(sx,sy,ex,ey,t){
+  var dx=ex-sx,dy=ey-sy,l=Math.hypot(dx,dy),nx=-dy/l*t/2,ny=dx/l*t/2;
+  return '<polygon points="'+[[sx+nx,sy+ny],[ex+nx,ey+ny],[ex-nx,ey-ny],[sx-nx,sy-ny]].map(function(q){return q[0].toFixed(1)+','+q[1].toFixed(1);}).join(' ')+'"/>';
+}
+var B15SIDE={
+  a:'<rect x="-16.5" y="-45" width="33" height="5.1"/>',c:'<rect x="-16.5" y="-45" width="12" height="5.1"/>',f:'<rect x="4.5" y="-45" width="12" height="5.1"/>',
+  b:b15arm(-3.8,-49,-16.4,-28.6,5.1),g:b15arm(3.8,-49,16.4,-28.6,5.1),
+  d:b15arm(-4.5,-34.1,-13.8,-47.1,5.1),e:b15arm(4.5,-34.1,13.8,-47.1,5.1)};
+/* de zeven varianten, te kiezen in het eigenschappenpaneel */
+var B15LIST=[['a','Zijwegen links en rechts'],['c','Zijweg links'],['f','Zijweg rechts'],['b','Schuin links (naar achter)'],['g','Schuin rechts (naar achter)'],['d','Schuin links (naar voor)'],['e','Schuin rechts (naar voor)']];
 function b15(v){
-  return warnPlate('<polygon points="-7.5,-27 7.5,-27 5.5,-57 0,-65 -5.5,-57" fill="#111"/><path d="'+B15SIDE[v]+'" stroke="#111" stroke-width="7" fill="none"/>');
+  return warnPlate('<g fill="'+INK+'"><polygon points="0,-59.4 8,-52.5 8,-26.8 0,-33.5 -8,-26.8 -8,-52.5"/>'+B15SIDE[v]+'</g>');
 }
 function hazard(pts){
   return pts.map(function(q){return '<circle cx="'+q[0]+'" cy="'+q[1]+'" r="9" fill="#ffb000" opacity=".35"/><circle cx="'+q[0]+'" cy="'+q[1]+'" r="4.5" fill="#ff9f00" stroke="#fff" stroke-width="1.2"/>';}).join('');
@@ -331,61 +414,68 @@ var TYPES={
     return s;
   }},
   stop:{label:'Stop (B5)',kind:'object',follow:true,w:68,h:150,draw:function(){
-    /* smalle, hoge letters die het bord vullen, zoals op het officiële B5-bord */
-    return signWrap('<polygon points="'+octagon(33,-45)+'" fill="#fff" stroke="#c9ccce" stroke-width="1"/><polygon points="'+octagon(30,-45)+'" fill="#d3202a"/>'+
-      '<text x="0" y="-37.5" text-anchor="middle" font-family="Arial Narrow,Helvetica Neue,Arial,Helvetica,sans-serif" font-weight="700" font-size="22" textLength="46" lengthAdjust="spacingAndGlyphs" fill="#fff">STOP</text>');
+    /* vier even brede, hoge letters over bijna de hele breedte, zoals op het officiële B5-bord */
+    return signWrap('<polygon points="'+octagon(33,-45)+'" fill="#fff" stroke="#c9ccce" stroke-width="1" stroke-linejoin="round"/><polygon points="'+octagon(31,-45)+'" fill="'+RED+'"/>'+
+      letters('STOP',0,-45,11,24.5,2.2,4,'#fff'));
   }},
-  b15a:{label:'Voorrang op kruisende zijwegen (B15a)',kind:'object',follow:true,w:80,h:150,draw:function(){return signWrap(b15('a'));}},
-  b15b:{label:'Zijweg schuin links (B15b)',kind:'object',follow:true,w:80,h:150,draw:function(){return signWrap(b15('b'));}},
-  b15c:{label:'Zijweg links (B15c)',kind:'object',follow:true,w:80,h:150,draw:function(){return signWrap(b15('c'));}},
-  b15d:{label:'Zijweg schuin links voor (B15d)',kind:'object',follow:true,w:80,h:150,draw:function(){return signWrap(b15('d'));}},
-  b15e:{label:'Zijweg schuin rechts voor (B15e)',kind:'object',follow:true,w:80,h:150,draw:function(){return signWrap(b15('e'));}},
-  b15f:{label:'Zijweg rechts (B15f)',kind:'object',follow:true,w:80,h:150,draw:function(){return signWrap(b15('f'));}},
-  b15g:{label:'Zijweg schuin rechts (B15g)',kind:'object',follow:true,w:80,h:150,draw:function(){return signWrap(b15('g'));}},
+  b15:{label:'Voorrang op zijweg (B15)',kind:'object',follow:true,w:80,h:150,draw:function(it){return signWrap(b15(B15SIDE[it.side]?it.side:'a'));}},
   b17:{label:'Voorrang van rechts (B17)',kind:'object',follow:true,w:80,h:150,draw:function(){
-    return signWrap(warnPlate('<path d="M-10 -53L10 -33M10 -53L-10 -33" stroke="#111" stroke-width="7.5" fill="none"/>'));
+    return signWrap(warnPlate('<path d="M-10.5 -52.5L10.5 -31.5M10.5 -52.5L-10.5 -31.5" stroke="'+INK+'" stroke-width="6.2" fill="none"/>'));
   }},
   a21:{label:'Oversteekplaats voetgangers (A21)',kind:'object',follow:true,w:80,h:150,draw:function(){
-    var z='',i;for(i=-2;i<=2;i++)z+='<rect x="'+(i*8-2.5)+'" y="-33" width="5" height="5" fill="#111"/>';
-    return signWrap(warnPlate(walker(0,-46,1.05,'#111')+z));
+    /* voetganger tussen twee onderbroken lijnen */
+    var z='',i;
+    for(i=-3;i<=2;i++)z+='<rect x="'+(i*7+1.1).toFixed(1)+'" y="-38.4" width="4.8" height="1.6" fill="'+INK+'"/>';
+    for(i=-3;i<=3;i++)z+='<rect x="'+(i*7-2.4).toFixed(1)+'" y="-28" width="4.8" height="1.6" fill="'+INK+'"/>';
+    return signWrap(warnPlate(z+walker(0,-28.6,.98,INK)));
   }},
   a25:{label:'Oversteekplaats fietsers (A25)',kind:'object',follow:true,w:80,h:150,draw:function(){
-    return signWrap(warnPlate(bikeIcon(0,-43,1.15,'#111',2.6)));
+    /* fietser op een fijn getekende fiets */
+    return signWrap(warnPlate('<g transform="translate(0 -32.4) scale(.64)">'+bicycle(INK,1.4)+rider(INK)+'</g>'));
   }},
   c3:{label:'Verboden toegang, beide richtingen (C3)',kind:'object',follow:true,w:68,h:150,draw:function(){return signWrap(ringPlate('#fff',''));}},
   c31a:{label:'Links afslaan verboden (C31a)',kind:'object',follow:true,w:68,h:150,draw:function(){return signWrap(turnBan(false));}},
   c31b:{label:'Rechts afslaan verboden (C31b)',kind:'object',follow:true,w:68,h:150,draw:function(){return signWrap(turnBan(true));}},
   c43:{label:'Maximumsnelheid (C43)',kind:'object',follow:true,w:68,h:150,draw:function(it){
-    var t=esc(it.text||'50');
-    return signWrap(ringPlate('#fff','<text x="0" y="-37" text-anchor="middle" font-family="Arial Narrow,Helvetica Neue,Arial,Helvetica,sans-serif" font-weight="700" font-size="23"'+(t.length>2?' textLength="38" lengthAdjust="spacingAndGlyphs"':'')+' fill="#111">'+t+'</text>'));
+    /* brede, vette cijfers; twee cijfers vullen ongeveer driekwart van het witte veld */
+    var t=String(it.text||'50').replace(/[^0-9]/g,'').slice(0,3)||'50',big=t.length<3;
+    return signWrap(ringPlate('#fff',big?letters(t,0,-45,15.4,18.6,2.6,3.8,INK):letters(t,0,-45,11.8,15,1.8,3.1,INK)));
   }},
   d5:{label:'Rotonde (D5)',kind:'object',follow:true,w:68,h:150,draw:function(it){
     /* nopost: alleen het ronde bord, gecentreerd (bv. midden op het middeneiland) */
     return it.nopost?'<g transform="translate(0 45)">'+bluePlate(roundArrows())+'</g>':signWrap(bluePlate(roundArrows()));
   }},
-  d7:{label:'Fietspad (D7)',kind:'object',follow:true,w:68,h:150,draw:function(){return signWrap(bluePlate(bikeIcon(0,-46,1.25,'#fff',2.6)));}},
+  d7:{label:'Fietspad (D7)',kind:'object',follow:true,w:68,h:150,draw:function(){
+    /* witte fiets op een grondlijn, dunne witte ring binnen de rand */
+    return signWrap('<circle cx="0" cy="-45" r="31.5" fill="#1b6ec2"/><circle cx="0" cy="-45" r="29.4" fill="none" stroke="#fff" stroke-width="1.3"/>'+
+      '<g transform="translate(0 -44) scale(.86)">'+bicycle('#fff',1.25)+'<path d="M-21 10.6H21" stroke="#fff" stroke-width="1.25"/></g>');
+  }},
   e1:{label:'Parkeren verboden (E1)',kind:'object',follow:true,w:68,h:150,draw:function(){
-    return signWrap(ringPlate(FBLUE,'<path d="M-16 -62L16 -28" stroke="#d3202a" stroke-width="6"/>'));
+    return signWrap(ringPlate(FBLUE,banBar(8)));
   }},
   e3:{label:'Stilstaan en parkeren verboden (E3)',kind:'object',follow:true,w:68,h:150,draw:function(){
-    return signWrap(ringPlate(FBLUE,'<path d="M-16 -62L16 -28M16 -62L-16 -28" stroke="#d3202a" stroke-width="6"/>'));
+    return signWrap(ringPlate(FBLUE,banBar(8,true)));
   }},
   e9a:{label:'Parking (E9a)',kind:'object',follow:true,w:56,h:150,draw:function(){
-    return signWrap(squarePlate(54,'<text x="0" y="-27" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="38" fill="#fff">P</text>'));
+    return signWrap(squarePlate(54,letters('P',.5,-40,21,33,0,6.6,'#fff')));
   }},
   f19:{label:'Eenrichtingsverkeer (F19)',kind:'object',follow:true,w:56,h:150,draw:function(){
-    return signWrap(squarePlate(54,'<rect x="-4.5" y="-50" width="9" height="31" fill="#fff"/><polygon points="-13,-49 13,-49 0,-62" fill="#fff"/>'));
+    return signWrap(squarePlate(54,'<path d="M0 -61.5L10.5 -49H3.2V-19.5H-3.2V-49H-10.5Z" fill="#fff"/>'));
   }},
   f49:{label:'Oversteekplaats voetgangers (F49)',kind:'object',follow:true,w:56,h:150,draw:function(){
-    return signWrap(squarePlate(54,'<polygon points="0,-63 19,-22 -19,-22" fill="#fff"/>'+
-      '<path d="M-12 -35H12M-15 -28H15" stroke="#111" stroke-width="1.6" stroke-dasharray="3 2"/>'+walker(0,-42,.9,'#111')));
+    /* grote witte driehoek met voetganger tussen twee onderbroken lijnen */
+    var z='',i;
+    for(i=-2;i<=2;i++)z+='<rect x="'+(i*5.6-1.6).toFixed(1)+'" y="-31.4" width="3.2" height="1.2" fill="'+INK+'"/>';
+    for(i=-3;i<=3;i++)z+='<rect x="'+(i*5.6-1.6).toFixed(1)+'" y="-23.6" width="3.2" height="1.2" fill="'+INK+'"/>';
+    return signWrap(squarePlate(54,'<polygon points="0,-62.5 21.5,-17.5 -21.5,-17.5" fill="#fff"/>'+z+walker(0,-23.2,.84,INK)));
   }},
   yield:{label:'Voorrang verlenen (B1)',kind:'object',follow:true,w:68,h:150,draw:function(){
-    return signWrap('<polygon points="-26,-62 26,-62 0,-17" fill="#fff" stroke="#d3202a" stroke-width="9" stroke-linejoin="round"/>');
+    return signWrap('<polygon points="-26,-62 26,-62 0,-17" fill="#fff" stroke="'+RED+'" stroke-width="10" stroke-linejoin="round"/>');
   }},
   priority:{label:'Voorrangsweg (B9)',kind:'object',follow:true,w:68,h:150,draw:function(){
-    return signWrap('<polygon points="0,-81 36,-45 0,-9 -36,-45" fill="#fff" stroke="#111" stroke-width="2.6" stroke-linejoin="round"/>'+
-      '<polygon points="0,-68 23,-45 0,-22 -23,-45" fill="#e8801a" stroke="#111" stroke-width="1.6" stroke-linejoin="miter"/>');
+    /* brede zwarte rand met afgeronde hoeken, oranje ruit met zwarte lijn */
+    return signWrap('<polygon points="0,-80 35,-45 0,-10 -35,-45" fill="#fff" stroke="'+INK+'" stroke-width="3.6" stroke-linejoin="round"/>'+
+      '<polygon points="0,-67.5 22.5,-45 0,-22.5 -22.5,-45" fill="'+ORANGE+'" stroke="'+INK+'" stroke-width="1.4"/>');
   }},
   endpriority:{label:'Einde voorrangsweg (B11)',kind:'object',follow:true,w:68,h:150,draw:function(){
     return signWrap('<defs><clipPath id="epc"><polygon points="600,70 1130,600 600,1130 70,600"/></clipPath></defs>'+
@@ -393,20 +483,21 @@ var TYPES={
       '<polygon points="600,60 1140,600 600,1140 60,600" fill="#fff"/>'+
       '<g clip-path="url(#epc)"><line x1="1400" y1="-200" x2="-200" y2="1400" stroke="#111" stroke-width="185"/></g>'+
       '<g fill="#e8801a" stroke="#111" stroke-width="24" stroke-linejoin="miter"><polygon points="270,600 600,270 710,380 380,710"/><polygon points="930,600 600,930 490,820 820,490"/></g>'+
-      '<polygon points="600,60 1140,600 600,1140 60,600" fill="none" stroke="#111" stroke-width="32" stroke-linejoin="round"/></g>');
+      '<polygon points="600,60 1140,600 600,1140 60,600" fill="none" stroke="#111" stroke-width="54" stroke-linejoin="round"/></g>');
   }},
   noentry:{label:'Verboden richting (C1)',kind:'object',follow:true,w:68,h:150,draw:function(){
-    return signWrap('<circle cx="0" cy="-45" r="31" fill="#d3202a" stroke="#fff" stroke-width="3"/><rect x="-21" y="-51" width="42" height="12" rx="2" fill="#fff"/>');
+    /* witte balk over ruim 90% van de breedte */
+    return signWrap('<circle cx="0" cy="-45" r="31" fill="'+RED+'" stroke="#fff" stroke-width="1.2"/><rect x="-28.5" y="-50.3" width="57" height="10.6" fill="#fff"/>');
   }},
   ahead:{label:'Verplicht rechtdoor (D1)',kind:'object',follow:true,w:68,h:150,draw:function(){
-    return signWrap('<circle cx="0" cy="-45" r="31" fill="#1b6ec2" stroke="#fff" stroke-width="3"/><path d="M0 -68L15 -47H6V-24H-6V-47H-15Z" fill="#fff"/>');
+    return signWrap(bluePlate('<path d="M0 -70L18 -48H6.6V-21H-6.6V-48H-18Z" fill="#fff"/>'));
   }},
   mergesign:{label:'Rijstrook\u00ADversmalling rechts (F97b)',kind:'object',follow:true,w:48,h:150,draw:function(){return signWrap(mergePlate());}},
   mergesign_l:{label:'Rijstrook\u00ADversmalling links (F97)',kind:'object',follow:true,w:48,h:150,draw:function(){return signWrap(mirror(mergePlate()));}},
   lanesign:{label:'Rijstrookbord (F13)',kind:'object',follow:true,w:112,h:150,wf:function(it){return (it.lanes||['s','s']).length*30+14;},draw:function(it){
     var L=it.lanes||['s','s'],n=L.length,Wd=n*30+14,s='',i,x0=-Wd/2;
-    s+='<rect x="'+x0+'" y="-86" width="'+Wd+'" height="74" rx="7" fill="'+FBLUE+'" stroke="#fff" stroke-width="3"/>';
-    s+='<rect x="'+(x0+3.5)+'" y="-82.5" width="'+(Wd-7)+'" height="67" rx="4.5" fill="none" stroke="#fff" stroke-width="1"/>';
+    s+='<rect x="'+x0+'" y="-86" width="'+Wd+'" height="74" rx="7" fill="'+FBLUE+'" stroke="#fff" stroke-width="1.2"/>';
+    s+='<rect x="'+(x0+3.5)+'" y="-82.5" width="'+(Wd-7)+'" height="67" rx="4.5" fill="none" stroke="#fff" stroke-width="1.6"/>';
     for(i=1;i<n;i++)s+='<line x1="'+(x0+7+i*30)+'" y1="-17" x2="'+(x0+7+i*30)+'" y2="-81" stroke="#fff" stroke-width="2" '+(it.solid?'':'stroke-dasharray="7 5" ')+'/>';
     for(i=0;i<n;i++)s+=laneArrow(L[i],x0+7+15+i*30);
     return signWrap(s);
@@ -577,7 +668,7 @@ var LINES=['solid','dashed','ydashed','tsolid','tdashed'];
 var BERMS=['midberm','grasberm','verhardeberm','stoep','fietspad','parkeer'];
 var LANEMARKS=['stopline','sharks','arrow_s','arrow_r','arrow_l','arrow_sr','arrow_sl','arrow_mr','arrow_ml','bikesym'];
 /* alles op een paal (borden, lichten): die komen op de hoek rechts van de naderende bestuurder */
-var POSTS=['light','stop','yield','priority','endpriority','b15a','b15b','b15c','b15d','b15e','b15f','b15g','b17',
+var POSTS=['light','stop','yield','priority','endpriority','b15','b17',
   'a21','a25','c3','c31a','c31b','c43','d5','d7','e1','e3','e9a','f19','f49','noentry','ahead','mergesign','mergesign_l','lanesign','workwarn'];
 
 var SECTIONS=[
@@ -586,7 +677,7 @@ var SECTIONS=[
   {el:'t-light',entries:[{type:'light',state:'red',label:'Verkeerslicht'}]},
   /* verkeersborden per reeks, zoals de officiële indeling (A gevaar, B voorrang, C verbod, D gebod, F aanwijzing) */
   {el:'t-sign-a',entries:[{type:'a21'},{type:'a25'},{type:'workwarn'}]},
-  {el:'t-sign-b',entries:[{type:'yield'},{type:'stop'},{type:'priority'},{type:'endpriority'},{type:'b15a'},{type:'b15b'},{type:'b15c'},{type:'b15d'},{type:'b15e'},{type:'b15f'},{type:'b15g'},{type:'b17'}]},
+  {el:'t-sign-b',entries:[{type:'yield'},{type:'stop'},{type:'priority'},{type:'endpriority'},{type:'b15'},   /* de zijweg kies je in het eigenschappenpaneel */{type:'b17'}]},
   {el:'t-sign-c',entries:[{type:'noentry'},{type:'c3'},{type:'c31a'},{type:'c31b'},
     {type:'c43',text:'50'}]},   /* de snelheid kies je in het eigenschappenpaneel */
   {el:'t-sign-d',entries:[{type:'ahead'},{type:'d5'},{type:'d7'}]},
@@ -621,6 +712,7 @@ function cleanPts(p){
 }
 function sanitizeItem(raw){
   if(raw&&raw.type==='cyclist')raw=Object.assign({},raw,{type:'bike'});   /* oud type uit eerdere versies */
+  var m=raw&&/^b15([a-g])$/.exec(raw.type);if(m)raw=Object.assign({},raw,{type:'b15',side:m[1]});   /* vroeger zeven aparte B15-borden */
   if(!raw||typeof raw!=='object'||!Object.prototype.hasOwnProperty.call(TYPES,raw.type))return null;
   var d=TYPES[raw.type];
   var it={id:Math.max(0,Math.floor(num(raw.id,0))),type:raw.type,
@@ -638,6 +730,7 @@ function sanitizeItem(raw){
   if(raw.dash)it.dash=true;
   if(raw.beacon===false&&d.beacon)it.beacon=false;
   if(raw.nopost===true)it.nopost=true;
+  if(raw.type==='b15'&&B15SIDE[raw.side])it.side=raw.side;
   if(d.signals&&['l','r','h'].indexOf(raw.blink)>-1)it.blink=raw.blink;
   if(d.signals&&raw.brake===true)it.brake=true;
   if(d.stretch||raw.type==='vlak'){
@@ -653,6 +746,6 @@ function sanitizeItem(raw){
 
 export {
   W,H,CX,CY,ROT,ARROW,DIRLABEL,COLORS,SVGNS,SHAPES,ROUTES,
-  TYPES,SECTIONS,ENTRY,LINES,BERMS,LANEMARKS,POSTS,
+  TYPES,SECTIONS,ENTRY,LINES,BERMS,LANEMARKS,POSTS,B15LIST,
   copyPts,isPts,vbox,normV,follows,baseDims,dims,clamp,sanitizeItem
 };
