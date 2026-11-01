@@ -543,7 +543,7 @@ var SECTIONS=[
   {el:'t-sign-a',entries:[{type:'a21'},{type:'a25'},{type:'workwarn'}]},
   {el:'t-sign-b',entries:[{type:'yield'},{type:'stop'},{type:'priority'},{type:'endpriority'},{type:'b15a'},{type:'b15b'},{type:'b15c'},{type:'b15d'},{type:'b15e'},{type:'b15f'},{type:'b15g'},{type:'b17'}]},
   {el:'t-sign-c',entries:[{type:'noentry'},{type:'c3'},{type:'c31a'},{type:'c31b'},
-    {type:'c43',text:'30',label:'Maximum 30 (C43)'},{type:'c43',text:'50',label:'Maximum 50 (C43)'},{type:'c43',text:'70',label:'Maximum 70 (C43)'},{type:'c43',text:'90',label:'Maximum 90 (C43)'}]},
+    {type:'c43',text:'50'}]},   /* de snelheid kies je in het eigenschappenpaneel */
   {el:'t-sign-d',entries:[{type:'ahead'},{type:'d5'},{type:'d7'}]},
   {el:'t-sign-e',entries:[{type:'e1'},{type:'e3'},{type:'e9a'}]},
   {el:'t-sign-f',entries:[{type:'f19'},{type:'f49'},{type:'mergesign'},{type:'mergesign_l'},{type:'lanesign',lanes:['l','s','r']}]},
