@@ -2,7 +2,7 @@
    Strategie "network-first": haal altijd eerst de nieuwste versie op (zo passen HTML,
    CSS en JS altijd bij elkaar) en val alleen zonder internet terug op de bewaarde kopie.
    Verhoog VERSION bij een nieuwe versie om oude bestanden op te ruimen. */
-const VERSION = 'v30';
+const VERSION = 'v31';
 const CACHE = 'verkeer-in-beeld-' + VERSION;
 const FILES = [
   './',

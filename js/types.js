@@ -686,11 +686,14 @@ var TYPES={
     return '<rect '+r+' fill="#dccda6" stroke="#b7a578" stroke-width="5"/><rect '+r+' fill="url(#paving)"/>';
   }},
   suggestie:{label:'Fietssuggestie\u00ADstrook',kind:'base',stretch:'wh',w:70,h:500,tw:50,th:90,draw:function(it){
-    return '<rect x="'+(-it.w/2)+'" y="'+(-it.h/2)+'" width="'+it.w+'" height="'+it.h+'" fill="#b85c46"/>'+
-      '<g transform="translate('+(-it.w/2+3)+' 0)">'+dashes(it.h,20,20,6,WHITE)+'</g>';
+    /* fietssuggestiestrook: enkel een rode strook, zonder markering */
+    return '<rect x="'+(-it.w/2)+'" y="'+(-it.h/2)+'" width="'+it.w+'" height="'+it.h+'" fill="#b85c46"/>';
   }},
   fietspad:{label:'Fietspad (rood)',kind:'base',stretch:'wh',w:90,h:500,tw:50,th:90,draw:function(it){
-    return '<rect x="'+(-it.w/2)+'" y="'+(-it.h/2)+'" width="'+it.w+'" height="'+it.h+'" fill="#c4513f" stroke="#a53f2f" stroke-width="2"/>';
+    /* gemarkeerd fietspad: rood, met aan beide zijden een witte onderbroken streep */
+    return '<rect x="'+(-it.w/2)+'" y="'+(-it.h/2)+'" width="'+it.w+'" height="'+it.h+'" fill="#c4513f"/>'+
+      '<g transform="translate('+(-it.w/2+3)+' 0)">'+dashes(it.h,20,20,6,WHITE)+'</g>'+
+      '<g transform="translate('+(it.w/2-3)+' 0)">'+dashes(it.h,20,20,6,WHITE)+'</g>';
   }},
   asfalt:{label:'Zijweg (asfalt)',kind:'base',stretch:'wh',w:400,h:190,tw:70,th:50,draw:function(it){
     return '<rect x="'+(-it.w/2)+'" y="'+(-it.h/2)+'" width="'+it.w+'" height="'+it.h+'" fill="#6f6a64"/>';

@@ -13,7 +13,7 @@ var store={cross:{items:[],vw:240,hw:240,arm:null},road:{items:[],roadW:280,orie
 var items=store.cross.items,roadS=store.road;
 var selId=null,uid=0,undoStack=[],redoStack=[],dir='bottom',curColor=COLORS[0],drag=null;
 var KEY='kruispunt-bouwer-v2';
-var APP_VERSION='v30';   /* moet gelijk zijn aan VERSION in sw.js; anders verschijnt de melding "nieuwe versie" */
+var APP_VERSION='v31';   /* moet gelijk zijn aan VERSION in sw.js; anders verschijnt de melding "nieuwe versie" */
 var ARMS=['top','bottom','left','right'];
 
 /* Zet bewaarde gegevens (localStorage of een geopend bestand) om naar de toestand van de app.
@@ -192,7 +192,7 @@ function roadPlace(it){
     var nb=countOf([t]),side=nb%2===0?1:-1,w=def.w,off=t==='midberm'?0:side*(RW/2+w/2);
     return {x:CX+(v?off:0),y:CY+(v?0:off),rot:v?0:90,h:v?H:W};
   }
-  if(t==='asfalt')return {x:CX,y:CY,rot:v?90:0,w:W,h:190};
+  if(t==='asfalt')return {x:CX,y:CY,rot:v?0:90,w:v?W:H,h:190};
   if(t==='zebra'||t==='fietsoversteek')return {x:v?CX:250,y:v?250:CY,rot:v?0:90,w:Math.min(RW,560)};
   if(t==='tramrails')return {x:CX,y:CY,rot:v?0:90,h:v?H:W};
   if(t==='zigzag')return {x:v?CX+RW/2-16:CX,y:v?CY:CY+RW/2-16,rot:v?0:90,h:300};
@@ -356,7 +356,7 @@ function renderInspector(it){
   if(d.kind==='vehicle'||it.type==='ped'){
     h+=insField('Afspelen: vertrekt als','<div class="seg">'+[0,1,2,3,4,5].map(function(n){
       return '<button type="button" data-order="'+n+'"'+((it.order||0)===n?' class="on"':'')+'>'+(n?n+'e':'–')+'</button>';}).join('')+'</div>');
-    var RT=scene==='cross'?[['l','Links af'],['s','Rechtdoor'],['r','Rechts af']]:scene==='round'?[['r','1e afrit'],['s','2e afrit'],['l','3e afrit'],['u','Keren']]:null;
+    var RT=scene==='cross'||(scene==='road'&&countOf(['asfalt']))?[['l','Links af'],['s','Rechtdoor'],['r','Rechts af']]:scene==='round'?[['r','1e afrit'],['s','2e afrit'],['l','3e afrit'],['u','Keren']]:null;
     if(it.order&&RT&&it.type!=='ped')h+=insField('Rijdt','<div class="seg">'+RT.map(function(o){
       return '<button type="button" data-route="'+o[0]+'"'+((it.route||'s')===o[0]?' class="on"':'')+'>'+o[1]+'</button>';}).join('')+'</div>');
   }
@@ -874,11 +874,18 @@ function routePts(it){
   var h=it.rot*Math.PI/180,r=[Math.cos(h),Math.sin(h)],f=[Math.sin(h),-Math.cos(h)];
   function W2(X,Y){return [CX+X*r[0]-Y*f[0],CY+X*r[1]-Y*f[1]];}   /* X naar rechts, Y naar achter (lokaal) */
   var X0=(it.x-CX)*r[0]+(it.y-CY)*r[1],Y0=-((it.x-CX)*f[0]+(it.y-CY)*f[1]),pts=[],q;
-  var route=it.type==='ped'||scene==='road'?'s':(it.route||'s');
+  var route=it.type==='ped'?'s':(it.route||'s');
   function bez(a,k,b){for(var t=0;t<=1.0001;t+=.05){var u=1-t;pts.push(W2(u*u*a[0]+2*u*t*k[0]+t*t*b[0],u*u*a[1]+2*u*t*k[1]+t*t*b[1]));}}
+  /* een voetganger steekt over en blijft dan staan */
+  if(it.type==='ped')return [[it.x,it.y],[it.x+f[0]*300,it.y+f[1]*300]];
+  if(scene==='road'&&route!=='s'){var tr=roadTurn(it,route,f,r);if(tr)return clipPts(tr);}
   if(scene==='round'){
-    var R=store.round.R,Rl=(Math.round(R*.48)+22+R)/2,dx=it.x-CX,dy=it.y-CY,phi;
-    if(Math.hypot(dx,dy)>Rl+4){
+    var R=store.round.R,Rl=(Math.round(R*.48)+22+R)/2,dx=it.x-CX,dy=it.y-CY,phi,dist=Math.hypot(dx,dy);
+    /* wie al op de ring rijdt (ook een fietser op het fietspad van de rotonde), blijft op zijn eigen afstand van het midden */
+    var tang=dist?(dy*f[0]-dx*f[1])/dist:0;   /* 1 = rijdt mee in de draairichting van de ring */
+    if(dist<=R+4&&dist>=Math.round(R*.48)+22&&tang>.7)Rl=dist;
+    if(dist>Rl+4&&dx*f[0]+dy*f[1]>=0)route='s';   /* rijdt weg van de rotonde */
+    else if(dist>Rl+4){
       /* rechtdoor naar de ring tot op de rijstrook */
       var b=dx*f[0]+dy*f[1],c=dx*dx+dy*dy-Rl*Rl,disc=b*b-c;
       if(disc<0)route='s';
@@ -910,6 +917,32 @@ function routePts(it){
   pts.push([it.x,it.y]);pts.push(W2(X0,-1500));
   return clipPts(pts);
 }
+/* rechte weg: links of rechts afslaan in een zijweg (onderdeel "Zijweg (asfalt)") vóór het voertuig */
+function roadTurn(it,route,f,r){
+  var d=route==='r'?r:[-r[0],-r[1]],best=null,RW=roadS.roadW;
+  var X0=(it.x-CX)*r[0]+(it.y-CY)*r[1];   /* zijwaartse afstand tot het midden van de weg */
+  items.forEach(function(o){
+    if(o.type!=='asfalt')return;
+    var a=o.rot*Math.PI/180,ax=[Math.cos(a),Math.sin(a)],nn=[-ax[1],ax[0]],dn=f[0]*nn[0]+f[1]*nn[1];
+    if(Math.abs(dn)<.7)return;   /* de zijweg moet de weg dwars kruisen */
+    var t=((o.x-it.x)*nn[0]+(o.y-it.y)*nn[1])/dn;
+    if(t<o.h/2*(o.s||1))return;   /* de zijweg moet vóór het voertuig liggen */
+    /* reikt de zijweg tot aan de kant waar we naartoe willen? */
+    var K0=[it.x+f[0]*t,it.y+f[1]*t],side=(route==='r'?RW/2-X0:RW/2+X0)+90;
+    var tip=[K0[0]+d[0]*side,K0[1]+d[1]*side];
+    if(Math.abs((tip[0]-o.x)*ax[0]+(tip[1]-o.y)*ax[1])>o.w/2*(o.s||1))return;
+    if(!best||t<best.t)best={t:t,o:o,side:side};
+  });
+  if(!best)return null;
+  /* rechterrijstrook van de zijweg: voor wie rechts afslaat aan de kant van waar hij komt, links af aan de overkant */
+  var q=best.o.h*(best.o.s||1)/4,lane=route==='r'?best.t-q:best.t+q;
+  var K=[it.x+f[0]*lane,it.y+f[1]*lane],rad=route==='r'?Math.min(70,Math.max(30,RW/2-X0-10)):Math.min(140,RW/2+X0);
+  var A=[K[0]-f[0]*rad,K[1]-f[1]*rad],B=[K[0]+d[0]*rad,K[1]+d[1]*rad],pts=[[it.x,it.y]];
+  if(lane-rad>0)pts.push(A);else A=[it.x,it.y];
+  for(var k=1;k<=20;k++){var tt=k/20,v=1-tt;pts.push([v*v*A[0]+2*v*tt*K[0]+tt*tt*B[0],v*v*A[1]+2*v*tt*K[1]+tt*tt*B[1]]);}
+  pts.push([B[0]+d[0]*1500,B[1]+d[1]*1500]);
+  return pts;
+}
 /* knip de route af zodra het voertuig helemaal buiten beeld is */
 function clipPts(p){
   function out(q){return q[0]<-140||q[0]>W+140||q[1]<-140||q[1]>H+140;}
@@ -924,7 +957,7 @@ function clipPts(p){
 var routeExit=null;
 function prepRoute(it){
   routeExit=null;
-  var p=routePts(it),L=[0],end;
+  var p=routePts(it).filter(function(q,i,arr){return !i||Math.hypot(q[0]-arr[i-1][0],q[1]-arr[i-1][1])>.5;}),L=[0],end;
   for(var i=1;i<p.length;i++)L.push(L[i-1]+Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]));
   end=L[L.length-1];
   var m={p:p,L:L,d:0,v:PLAYSPEED[it.type]||280,blink:null,b0:0,b1:end*.7};
@@ -942,7 +975,7 @@ function routeAt(m){
 }
 function playStep(auto){
   if(play&&play.moving)return;
-  if(!play){var gr=playGroups();if(!gr.length)return;play={groups:gr,gi:0,ov:{},moving:null,auto:false};selId=null;}
+  if(!play){var gr=playGroups();if(!gr.length)return;play={groups:gr,gi:0,ov:{},moving:null,auto:false,tags:tagLinks()};selId=null;}
   if(play.gi>=play.groups.length){if(!auto)return;stopPlay();playStep(true);return;}
   play.auto=!!auto;
   var mv={};play.groups[play.gi].forEach(function(id){var it=find(id);if(it)mv[id]=prepRoute(it);});
@@ -957,12 +990,31 @@ function playTick(ts){
     var m=play.moving[id];m.d+=m.v*dt;
     var pos=routeAt(m),it=find(+id);
     play.ov[id]={x:pos.x,y:pos.y,rot:pos.rot,blink:m.blink&&m.d>=m.b0&&m.d<m.b1?m.blink:(it&&it.blink)};
+    /* het lettertje bij dit voertuig rijdt mee en blijft op dezelfde plaats ten opzichte van het voertuig */
+    if(it)(play.tags[id]||[]).forEach(function(tg){
+      var a=(pos.rot-it.rot)*Math.PI/180,ox=tg.x-it.x,oy=tg.y-it.y;
+      play.ov[tg.id]={x:pos.x+ox*Math.cos(a)-oy*Math.sin(a),y:pos.y+ox*Math.sin(a)+oy*Math.cos(a)};
+    });
     if(m.d<m.L[m.L.length-1])busy=true;
   });
   renderPlay();
   if(busy){playRaf=requestAnimationFrame(playTick);return;}
   play.moving=null;playUI();
   if(play.auto&&play.gi<play.groups.length)setTimeout(function(){if(play&&!play.moving&&play.auto)playStep(true);},450);
+}
+/* elk lettertje (A, B …) hoort bij het dichtstbijzijnde voertuig of de dichtstbijzijnde voetganger */
+function tagLinks(){
+  var out={};
+  items.forEach(function(tg){
+    if(tg.type!=='tag')return;
+    var best=null,bd=150;
+    items.forEach(function(o){
+      if(TYPES[o.type].kind!=='vehicle'&&o.type!=='ped')return;
+      var dd=Math.hypot(o.x-tg.x,o.y-tg.y);if(dd<bd){bd=dd;best=o;}
+    });
+    if(best)(out[best.id]=out[best.id]||[]).push(tg);
+  });
+  return out;
 }
 function renderPlay(){
   layer.innerHTML=items.map(function(it){var o=play&&play.ov[it.id];return o?Object.assign({},it,o):it;}).sort(byLayer).map(itemSvg).join('');
@@ -1061,10 +1113,10 @@ document.getElementById('bAbout').onclick=function(){
    Na een nieuwe versie met NEWS verschijnt het altijd één keer, met de vernieuwingen bij de juiste stap.
    Bij een nieuwe versie: NEWS.id aanpassen en de items vervangen (step = 1, 2 of 3). */
 var WELCOME_OFF='verkeer-welkom-uit',NEWS_SEEN='verkeer-nieuws-gezien';
-var NEWS={id:'v30',items:[
-  {step:1,t:'Mijn tekeningen: via Openen vind je al je bewaarde tekeningen terug, met een voorbeeldje en een naam.'},
-  {step:3,t:'Kies bij Opslaan "Bij mijn tekeningen" om een tekening met een naam te bewaren. Kies je een voorbeeld, begin je leeg of wis je alles, dan wordt je vorige tekening automatisch bewaard.'},
-  {step:3,t:'Is er een nieuwe versie van de app, dan verschijnt bovenaan een balk om te vernieuwen.'}
+var NEWS={id:'v31',items:[
+  {step:2,t:'De fietssuggestiestrook is nu enkel een rode strook. Het fietspad (rood) heeft aan beide zijden een witte onderbroken streep.'},
+  {step:3,t:'Afspelen: de lettertjes A, B, C rijden mee met hun voertuig. Ook de voorbeelden van de rotonde staan klaar om af te spelen.'},
+  {step:3,t:'Op de rechte weg kan een voertuig links of rechts afslaan in een zijweg: zet een "Zijweg (asfalt)" op de weg en kies bij het voertuig "Rijdt".'}
 ]};
 function welcomeOff(){try{return localStorage.getItem(WELCOME_OFF)==='1';}catch(e){return false;}}
 function newsUnseen(){try{return localStorage.getItem(NEWS_SEEN)!==NEWS.id;}catch(e){return false;}}

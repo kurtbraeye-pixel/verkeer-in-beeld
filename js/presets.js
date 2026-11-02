@@ -200,30 +200,30 @@ var RPRESETS=[
   {id:'r1',label:'Rotonde oprijden: voorrang aan wie op de rotonde rijdt',R:250,
     q:{question:'Wie mag als eerste rijden?',answers:['A, want B komt van links','B, want A moet voorrang verlenen bij het oprijden','Wie het eerst aankomt','A, want hij rijdt rechtdoor'],correct:1},
     build:function(){
-      return entries().concat([I('car',560,780,{color:C.red}),ringCar(135,C.blue),tagAt(480,800,'A'),tagAt(300,665,'B')]);
+      return entries().concat([go(I('car',560,780,{color:C.red}),2),go(ringCar(135,C.blue),1),tagAt(480,800,'A'),tagAt(300,665,'B')]);
     }},
   {id:'r2',label:'Rotonde: rechtsaf (eerste afrit)',R:250,build:function(){
-    return entries().concat([route([A_IN,[560,660],[600,592],[668,522],[760,490],[880,490]]),I('car',560,800,{color:C.red}),tagAt(480,800,'A')]);
+    return entries().concat([route([A_IN,[560,660],[600,592],[668,522],[760,490],[880,490]]),go(I('car',560,800,{color:C.red}),1,'r'),tagAt(480,800,'A')]);
   }},
   {id:'r3',label:'Rotonde: rechtdoor (tweede afrit)',R:250,build:function(){
-    return entries().concat([route([A_IN,[560,668],[640,582],[690,450],[652,322],[560,252],[440,170],[440,40]]),I('car',560,800,{color:C.red}),tagAt(480,800,'A')]);
+    return entries().concat([route([A_IN,[560,668],[640,582],[690,450],[652,322],[560,252],[440,170],[440,40]]),go(I('car',560,800,{color:C.red}),1),tagAt(480,800,'A')]);
   }},
   {id:'r4',label:'Rotonde: linksaf (derde afrit)',R:250,build:function(){
-    return entries().concat([route([A_IN,[560,668],[640,590],[690,450],[642,300],[500,232],[370,270],[302,332],[150,370],[30,370]]),I('car',560,800,{color:C.red}),tagAt(480,800,'A')]);
+    return entries().concat([route([A_IN,[560,668],[640,590],[690,450],[642,300],[500,232],[370,270],[302,332],[150,370],[30,370]]),go(I('car',560,800,{color:C.red}),1,'l'),tagAt(480,800,'A')]);
   }},
   {id:'r5',label:'Rotonde verlaten: voetganger op het zebrapad',R:250,
     q:{question:'A verlaat de rotonde. Wat moet A doen?',answers:['De voetganger laten oversteken','Doorrijden, want A rijdt op de rotonde','Claxonneren en doorrijden','Alleen stoppen als de voetganger al op het zebrapad loopt'],correct:0},
     build:function(){
-      return entries().concat(zebras(),[I('ped',875,520,{color:C.orange,rot:180}),
-        I('car',735,490,{rot:90,color:C.red}),tagAt(735,565,'A')]);
+      return entries().concat(zebras(),[go(I('ped',875,540,{color:C.orange}),1),
+        go(I('car',735,490,{rot:90,color:C.red}),2),tagAt(735,565,'A')]);
     }},
   {id:'r6',label:'Rotonde met fietspad op de rotonde',R:250,bike:'ring',
     q:{question:'Wie mag als eerste rijden?',answers:['A, want de fietser rijdt naast de rotonde','B, want A moet voorrang verlenen aan wie op de rotonde rijdt, ook aan fietsers','Wie het eerst aankomt','A, want hij komt van rechts'],correct:1},
     build:function(){
       var a=118*Math.PI/180;
       return entries().concat([
-        I('bike',Math.round(500+235*Math.cos(a)),Math.round(430+235*Math.sin(a)),{rot:118,color:C.blue}),
-        I('car',560,780,{color:C.red}),tagAt(480,800,'A'),tagAt(330,640,'B')]);
+        go(I('bike',Math.round(500+235*Math.cos(a)),Math.round(430+235*Math.sin(a)),{rot:118,color:C.blue}),1),
+        go(I('car',560,780,{color:C.red}),2),tagAt(480,800,'A'),tagAt(330,640,'B')]);
     }},
   {id:'r7',label:'Rotonde met vrijliggend fietspad: fietser verleent voorrang',R:250,bike:'apart',
     q:{question:'A verlaat de rotonde. Wie mag eerst over de fietsoversteek?',answers:['A, want de fietser moet wachten aan het bord en de haaientanden','B, want fietsers hebben altijd voorrang op een fietsoversteek','B, want hij komt van rechts','Wie het eerst aankomt'],correct:0},
@@ -238,8 +238,8 @@ var RPRESETS=[
         var t=at(-128,330),b=at(-172,370),rot=((90+r)%360+360)%360;
         out.push(I('sharks',t[0],t[1],{rot:rot,w:62,s:.45}),I('yield',b[0],b[1],{rot:rot,s:.6}));
       }
-      return out.concat([I('bike',320,717,{rot:135,color:C.blue}),
-        I('car',440,690,{rot:180,color:C.red}),tagAt(440,585,'A'),tagAt(285,690,'B')]);
+      return out.concat([go(I('bike',320,717,{rot:135,color:C.blue}),2),
+        go(I('car',440,690,{rot:180,color:C.red}),1),tagAt(440,585,'A'),tagAt(285,690,'B')]);
     }}
 ];
 
