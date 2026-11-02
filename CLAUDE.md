@@ -13,7 +13,7 @@ Gemaakt door Kurt Braeye (Ligo Midden- en Zuid-West-Vlaanderen). Communiceer in 
 2. **Bij testen in de browser:** eerst `localStorage['kruispunt-bouwer-v2']` bewaren (sessionStorage) en na de test terugzetten,
    met `Storage.prototype.setItem` geblokkeerd vóór het herladen (anders overschrijft `pagehide` de herstelde tekening).
    De gebruiker tekent vaak zelf in het testvenster.
-3. Verhoog `VERSION` in `sw.js` en zet nieuwe bestanden in de lijst `FILES`.
+3. Verhoog `VERSION` in `sw.js` én `APP_VERSION` bovenaan `js/app.js` (altijd gelijk; verschillen ze, dan toont de app de balk "nieuwe versie") en zet nieuwe bestanden in de lijst `FILES`.
    Is de wijziging belangrijk voor collega's? Pas dan `NEWS` in `js/app.js` aan (nieuwe `id`, items per stap 1–3):
    iedereen krijgt het welkomstscherm dan één keer te zien, ook wie "niet meer tonen" aanvinkte.
 4. Toon wat er veranderde en **vraag akkoord voordat je commit en pusht**. Pas na "ja, zet online": commit, push,

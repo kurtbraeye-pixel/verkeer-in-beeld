@@ -27,6 +27,7 @@
   <symbol id="i-rotl" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
   <symbol id="i-rotr" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.17 6.81a1 1 0 0 0-3.98-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/><path d="m15 5 4 4"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></symbol>
   <symbol id="i-eraser" viewBox="0 0 24 24"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></symbol>
   <symbol id="i-open" viewBox="0 0 24 24"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></symbol>
@@ -51,8 +52,8 @@
     </div>
   </div>
   <div class="actions">
-    <button class="btn ghost" id="bImport" type="button" title="Een werkbestand (.json) openen"><svg class="ic"><use href="#i-open"/></svg><span>Openen</span></button>
-    <button class="btn ghost" id="bSave" type="button" title="Opslaan als afbeelding of als werkbestand"><svg class="ic"><use href="#i-save"/></svg><span>Opslaan</span></button>
+    <button class="btn ghost" id="bImport" type="button" title="Mijn tekeningen of een werkbestand openen"><svg class="ic"><use href="#i-open"/></svg><span>Openen</span></button>
+    <button class="btn ghost" id="bSave" type="button" title="Bewaren bij mijn tekeningen, als afbeelding of als werkbestand"><svg class="ic"><use href="#i-save"/></svg><span>Opslaan</span></button>
     <button class="btn ghost" id="bSheet" type="button" title="Werkblad met meerkeuzevraag afdrukken"><svg class="ic"><use href="#i-print"/></svg><span>Werkblad</span></button>
     <button class="btn primary" id="bPresent" type="button" title="Presentatiemodus voor het digibord"><svg class="ic"><use href="#i-present"/></svg><span>Presenteren</span></button>
     <button class="btn ghost icon" id="bAbout" type="button" title="Over deze app" aria-label="Over deze app"><svg class="ic"><use href="#i-info"/></svg></button>
@@ -194,6 +195,11 @@
   <div class="card" id="modalCard"></div>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
+<div class="updbar" id="updBar" role="status" hidden>
+  <span>Er is een nieuwe versie van Verkeer in beeld.</span>
+  <button class="btn primary" type="button" id="updGo">Nu vernieuwen</button>
+  <button class="btn ghost icon" type="button" id="updLater" title="Later" aria-label="Later"><svg class="ic"><use href="#i-x"/></svg></button>
+</div>
 <div id="print" aria-hidden="true"></div>
 
 <noscript><p style="padding:16px">Deze app heeft JavaScript nodig.</p></noscript>

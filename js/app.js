@@ -13,6 +13,7 @@ var store={cross:{items:[],vw:240,hw:240,arm:null},road:{items:[],roadW:280,orie
 var items=store.cross.items,roadS=store.road;
 var selId=null,uid=0,undoStack=[],redoStack=[],dir='bottom',curColor=COLORS[0],drag=null;
 var KEY='kruispunt-bouwer-v2';
+var APP_VERSION='v30';   /* moet gelijk zijn aan VERSION in sw.js; anders verschijnt de melding "nieuwe versie" */
 var ARMS=['top','bottom','left','right'];
 
 /* Zet bewaarde gegevens (localStorage of een geopend bestand) om naar de toestand van de app.
@@ -588,7 +589,7 @@ function redo(){
 document.getElementById('bUndo').onclick=undo;
 document.getElementById('bRedo').onclick=redo;
 document.getElementById('bClear').onclick=function(){
-  if(!items.length)return;pushHistory(snap());items=[];store[scene].items=items;store[scene].preset=null;selId=null;drawBase();render();
+  if(!items.length)return;autoKeep();pushHistory(snap());items=[];store[scene].items=items;store[scene].preset=null;selId=null;drawBase();render();
 };
 
 document.addEventListener('keydown',function(e){
@@ -767,7 +768,7 @@ document.getElementById('oH').onclick=function(){setOrient('h');};
 var PSETS={cross:{list:XPRESETS,el:'presetC'},road:{list:PRESETS,el:'preset'},round:{list:RPRESETS,el:'presetR'}};
 function curPreset(){var id=store[scene].preset;return PSETS[scene].list.filter(function(p){return p.id===id;})[0]||null;}
 function applyPreset(p){
-  stopPlay();pushHistory(snap());
+  stopPlay();autoKeep();pushHistory(snap());
   var st=store[scene];
   if(scene==='cross'){st.vw=p.vw;st.hw=p.hw;st.arm=p.arm;}
   else if(scene==='road'){st.roadW=p.roadW;st.orient='v';}
@@ -789,7 +790,7 @@ Object.keys(PSETS).forEach(function(k){
 
 /* leeg tekenvlak voor de huidige situatie (ongedaan maken brengt de vorige tekening terug) */
 function startEmpty(){
-  stopPlay();if(items.length)pushHistory(snap());
+  stopPlay();autoKeep();if(items.length)pushHistory(snap());
   items=[];store[scene].items=items;store[scene].preset=null;selId=null;drawBase();render();presLabel();
 }
 
@@ -1060,10 +1061,10 @@ document.getElementById('bAbout').onclick=function(){
    Na een nieuwe versie met NEWS verschijnt het altijd één keer, met de vernieuwingen bij de juiste stap.
    Bij een nieuwe versie: NEWS.id aanpassen en de items vervangen (step = 1, 2 of 3). */
 var WELCOME_OFF='verkeer-welkom-uit',NEWS_SEEN='verkeer-nieuws-gezien';
-var NEWS={id:'v28',items:[
-  {step:2,t:'Nieuwe verkeersborden, getekend zoals de officiële borden. Het voorrangsbord B15 is nu één bord: kies rechts welke variant je nodig hebt.'},
-  {step:2,t:'Alle voertuigen en personen in dezelfde stijl, met schaduw, spiegels en richtingaanwijzers.'},
-  {step:3,t:'Afspelen: stel bij elk voertuig in als hoeveelste het vertrekt en laat ze stap voor stap rijden. In de presentatie start de spatiebalk de volgende stap. De voorbeelden "wie mag eerst?" staan al klaar.'}
+var NEWS={id:'v30',items:[
+  {step:1,t:'Mijn tekeningen: via Openen vind je al je bewaarde tekeningen terug, met een voorbeeldje en een naam.'},
+  {step:3,t:'Kies bij Opslaan "Bij mijn tekeningen" om een tekening met een naam te bewaren. Kies je een voorbeeld, begin je leeg of wis je alles, dan wordt je vorige tekening automatisch bewaard.'},
+  {step:3,t:'Is er een nieuwe versie van de app, dan verschijnt bovenaan een balk om te vernieuwen.'}
 ]};
 function welcomeOff(){try{return localStorage.getItem(WELCOME_OFF)==='1';}catch(e){return false;}}
 function newsUnseen(){try{return localStorage.getItem(NEWS_SEEN)!==NEWS.id;}catch(e){return false;}}
@@ -1076,7 +1077,7 @@ function welcomeStrip(){
 }
 var WSTEPS=[
   {t:'Kies een situatie',
-   d:'Bovenaan kies je een kruispunt, een rechte weg of een rotonde. Of vertrek van een kant-en-klaar voorbeeld, sommige met een meerkeuzevraag.',
+   d:'Bovenaan kies je een kruispunt, een rechte weg of een rotonde. Of vertrek van een kant-en-klaar voorbeeld, sommige met een meerkeuzevraag. Met Openen vind je je eigen tekeningen terug.',
    pic:function(){return '<div class="wpic three">'+['cross','road','round'].map(function(k){
      return '<figure><div class="gal-thumb">'+thumbSvg(k,null)+'</div><figcaption>'+SCENE_NAMES[k]+'</figcaption></figure>';}).join('')+'</div>';}},
   {t:'Voeg materiaal toe',
@@ -1130,9 +1131,11 @@ function welcomeFirst(){return firstVisit;}
 /* ---------- opslaan: één knop, twee keuzes ---------- */
 document.getElementById('bSave').onclick=function(){
   var c=openDialog('<h2 id="modalTitle">Opslaan</h2>'+
-    '<button class="choice" type="button" data-save="png" autofocus><b>Afbeelding</b><span>Voor Word, PowerPoint of een e-mail. De afbeelding wordt gedownload en meteen gekopieerd, zodat je ze ook kunt plakken met Ctrl+V.</span></button>'+
-    '<button class="choice" type="button" data-save="json"><b>Werkbestand</b><span>Om later verder te tekenen in deze app: open het met de knop "Openen". Bewaart het kruispunt, de rechte weg en de rotonde samen.</span></button>'+
+    '<button class="choice" type="button" data-save="lib" autofocus><b>Bij mijn tekeningen</b><span>Bewaar de tekening met een naam in deze browser. Je opent ze later terug via "Openen".</span></button>'+
+    '<button class="choice" type="button" data-save="png"><b>Afbeelding</b><span>Voor Word, PowerPoint of een e-mail. De afbeelding wordt gedownload en meteen gekopieerd, zodat je ze ook kunt plakken met Ctrl+V.</span></button>'+
+    '<button class="choice" type="button" data-save="json"><b>Werkbestand</b><span>Een bestand om op een ander toestel verder te tekenen of door te geven aan een collega. Bewaart het kruispunt, de rechte weg en de rotonde samen.</span></button>'+
     '<div class="row"><button class="btn" type="button" data-close>Annuleren</button></div>');
+  c.querySelector('[data-save="lib"]').onclick=function(){openLibrary(true);};
   c.querySelector('[data-save="png"]').onclick=savePng;
   c.querySelector('[data-save="json"]').onclick=saveJson;
 };
@@ -1156,20 +1159,145 @@ function saveJson(){
   toast('Werkbestand gedownload. Open het later met de knop "Openen".');
 }
 var fileIn=document.getElementById('fileIn');
-document.getElementById('bImport').onclick=function(){fileIn.click();};
+document.getElementById('bImport').onclick=function(){openLibrary(false);};
 fileIn.addEventListener('change',function(){
   var f=fileIn.files[0];fileIn.value='';
-  if(!f)return;
-  var hasWork=store.cross.items.length||store.road.items.length||store.round.items.length;
-  if(hasWork&&!confirm('Dit vervangt je huidige tekeningen. Doorgaan?'))return;
+  if(f)openFile(f);
+});
+/* een werkbestand openen; wat er nu getekend staat, komt eerst automatisch bij "mijn tekeningen" */
+function openFile(f){
+  closeModal();
   f.text().then(function(txt){
-    if(!applyData(JSON.parse(txt)))throw new Error('formaat');
-    undoStack=[];redoStack=[];selId=null;
-    drawBase();renderPalette();render();saveNow();
+    var data=JSON.parse(txt);
+    if(!data||!data.store)throw new Error('formaat');
+    var was=scene;['cross','road','round'].forEach(function(k){scene=k;items=store[k].items;autoKeep();});
+    scene=was;items=store[scene].items;
+    if(!applyData(data))throw new Error('formaat');
+    stopPlay();undoStack=[];redoStack=[];selId=null;
+    drawBase();renderPalette();render();presLabel();saveNow();
+    toast('Werkbestand geopend. Je vorige tekening staat bij "Mijn tekeningen".');
   }).catch(function(){
     showModal('Dit bestand kon niet geopend worden. Kies een werkbestand (.json) dat je eerder via "Opslaan" hebt gemaakt.');
   });
+}
+/* een werkbestand in het venster slepen opent het ook */
+function hasFiles(e){return e.dataTransfer&&[].indexOf.call(e.dataTransfer.types||[],'Files')>-1;}
+window.addEventListener('dragover',function(e){if(hasFiles(e)){e.preventDefault();e.dataTransfer.dropEffect='copy';document.body.classList.add('dropping');}});
+window.addEventListener('dragleave',function(e){if(!e.relatedTarget)document.body.classList.remove('dropping');});
+window.addEventListener('drop',function(e){
+  if(!hasFiles(e))return;
+  e.preventDefault();document.body.classList.remove('dropping');
+  var f=e.dataTransfer.files[0];
+  if(f&&/\.json$/i.test(f.name))openFile(f);
+  else if(f)showModal('Sleep een werkbestand (.json) in het venster om het te openen.');
 });
+
+/* ---------- mijn tekeningen: meerdere tekeningen met een naam, bewaard in deze browser ----------
+   Elke tekening is één situatie: {id, name, date, scene, set (instellingen van de weg), items}.
+   Wordt een eigen tekening vervangen (voorbeeld, leeg beginnen, wissen, openen), dan komt ze eerst
+   als "Automatisch bewaard" in de lijst; daarvan blijven er maximaal AUTO_MAX. */
+var LIB_KEY='verkeer-tekeningen',AUTO_MAX=5;
+function libLoad(){
+  try{var a=JSON.parse(localStorage.getItem(LIB_KEY)||'[]');
+    return Array.isArray(a)?a.filter(function(d){return d&&PSETS[d.scene]&&Array.isArray(d.items)&&typeof d.name==='string';}):[];
+  }catch(e){return [];}
+}
+function libStore(a){
+  try{localStorage.setItem(LIB_KEY,JSON.stringify(a));return true;}
+  catch(e){showModal('Er is geen plaats meer in deze browser. Verwijder enkele tekeningen of bewaar ze als werkbestand.');return false;}
+}
+function noIds(list){return JSON.stringify(list,function(k,v){return k==='id'?undefined:v;});}
+function curEntry(){
+  store[scene].items=items;var st=settings();delete st.preset;
+  return {scene:scene,set:st,preset:store[scene].preset||null,items:JSON.parse(noIds(items))};
+}
+function sameEntry(a,b){return a.scene===b.scene&&noIds(a.items)===noIds(b.items)&&JSON.stringify(a.set)===JSON.stringify(b.set);}
+/* niets te bewaren: leeg, of een voorbeeld waaraan niets veranderd is */
+function pristine(){
+  if(!items.length)return true;
+  var p=curPreset();return !!p&&noIds(items.map(sanitizeItem))===noIds(p.build().map(sanitizeItem));
+}
+function autoKeep(){
+  if(pristine())return;
+  var e=curEntry(),lib=libLoad();
+  if(lib.some(function(d){return sameEntry(d,e);}))return;
+  e.id=Date.now();e.date=e.id;e.auto=true;e.name='Automatisch bewaard';
+  lib.unshift(e);
+  var n=0;lib=lib.filter(function(d){return !d.auto||++n<=AUTO_MAX;});
+  try{localStorage.setItem(LIB_KEY,JSON.stringify(lib));}catch(x){}
+}
+function libDate(t){
+  var d=new Date(t),M=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+  return d.getDate()+' '+M[d.getMonth()]+' '+d.getFullYear()+', '+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
+}
+function defaultName(){var p=curPreset();return p?p.label:SCENE_NAMES[scene]+' – '+libDate(Date.now()).split(',')[0];}
+function libSaveCurrent(name){
+  name=name.trim().slice(0,80);if(!name)return false;
+  var lib=libLoad(),e=curEntry(),old=lib.filter(function(d){return !d.auto&&d.name.toLowerCase()===name.toLowerCase();})[0];
+  if(old&&!confirm('Er bestaat al een tekening "'+old.name+'". Wil je die vervangen?'))return false;
+  if(old)lib=lib.filter(function(d){return d!==old;});
+  e.id=Date.now();e.date=e.id;e.name=name;
+  lib.unshift(e);
+  if(!libStore(lib))return false;
+  libName[scene]=name;
+  return true;
+}
+var libName={};   /* naam van de tekening die per situatie geopend werd, als voorstel bij opnieuw bewaren */
+function libOpen(e){
+  stopPlay();autoKeep();
+  if(scene!==e.scene)setScene(e.scene);
+  pushHistory(snap());
+  var st=store[scene],s=e.set||{};
+  if(scene==='cross'){st.vw=clamp(+s.vw||240,160,720);st.hw=clamp(+s.hw||240,160,640);st.arm=ARMS.indexOf(s.arm)>-1?s.arm:null;}
+  else if(scene==='road'){st.roadW=clamp(+s.roadW||280,160,760);st.orient=s.orient==='h'?'h':'v';}
+  else{st.R=clamp(+s.R||250,200,300);st.bike=['ring','apart'].indexOf(s.bike)>-1?s.bike:'';}
+  st.preset=PSETS[scene].list.some(function(p){return p.id===e.preset;})?e.preset:null;
+  items=e.items.map(sanitizeItem).filter(Boolean);items.forEach(function(i){i.id=++uid;});
+  st.items=items;selId=null;libName[scene]=e.auto?null:e.name;
+  closeModal();drawBase();renderDpad();renderTiles();render();presLabel();saveNow();
+  toast('"'+e.name+'" geopend.');
+}
+function openLibrary(saving){
+  var c=openDialog('<h2 id="modalTitle">Mijn tekeningen</h2>'+
+    '<form class="libsave" id="libForm"><label for="libName">Huidige tekening bewaren als</label>'+
+      '<div class="librow"><input id="libName" type="text" maxlength="80" autocomplete="off" value="'+escHtml(libName[scene]||defaultName())+'">'+
+      '<button class="btn primary" type="submit">'+IC('save')+'<span>Bewaren</span></button></div></form>'+
+    '<div class="gal lib" id="libList"></div>'+
+    '<p class="small">Je tekeningen staan in deze browser op dit toestel. Wil je ze op een ander toestel gebruiken of doorgeven? Kies dan bij Opslaan een werkbestand.</p>'+
+    '<div class="row"><button class="btn" type="button" id="libFile">'+IC('open')+'<span>Werkbestand openen …</span></button><button class="btn" type="button" data-close>Sluiten</button></div>','wide');
+  var list=c.querySelector('#libList'),inp=c.querySelector('#libName');
+  function fill(){
+    var lib=libLoad();
+    list.innerHTML=lib.length?lib.map(function(d){
+      return '<div class="gal-card lib-card" data-lid="'+d.id+'"><button class="lib-open" type="button" data-lopen="'+d.id+'" title="Openen"><div class="gal-thumb">'+thumbOf(d.scene,d.set||{},d.items.map(sanitizeItem).filter(Boolean))+'</div>'+
+        '<b>'+escHtml(d.name)+'</b><span>'+SCENE_NAMES[d.scene]+' · '+libDate(d.date)+'</span>'+(d.auto?'<span class="badge">Automatisch bewaard</span>':'')+'</button>'+
+        '<div class="lib-acts"><button class="btn ghost icon" type="button" data-lren="'+d.id+'" title="Naam wijzigen" aria-label="Naam wijzigen">'+IC('pencil')+'</button>'+
+        '<button class="btn ghost icon" type="button" data-ldel="'+d.id+'" title="Verwijderen" aria-label="Verwijderen">'+IC('trash')+'</button></div></div>';
+    }).join(''):'<p class="lib-empty">Nog geen tekeningen bewaard.</p>';
+  }
+  fill();
+  c.querySelector('#libForm').onsubmit=function(e){
+    e.preventDefault();
+    if(!items.length){showModal('Er staat nog niets op de tekening om te bewaren.');return;}
+    if(libSaveCurrent(inp.value)){fill();toast('Bewaard bij "Mijn tekeningen".');}
+  };
+  c.querySelector('#libFile').onclick=function(){fileIn.click();};
+  list.addEventListener('click',function(e){
+    var lib=libLoad(),b,id;
+    if((b=e.target.closest('[data-lopen]'))){id=+b.getAttribute('data-lopen');var d=lib.filter(function(x){return x.id===id;})[0];if(d)libOpen(d);return;}
+    if((b=e.target.closest('[data-lren]'))){
+      id=+b.getAttribute('data-lren');var r=lib.filter(function(x){return x.id===id;})[0];if(!r)return;
+      var nm=prompt('Nieuwe naam voor de tekening:',r.auto?'':r.name);
+      if(nm&&nm.trim()){r.name=nm.trim().slice(0,80);delete r.auto;libStore(lib);fill();}
+      return;
+    }
+    if((b=e.target.closest('[data-ldel]'))){
+      id=+b.getAttribute('data-ldel');var x=lib.filter(function(q){return q.id===id;})[0];if(!x)return;
+      if(confirm('"'+x.name+'" verwijderen? Dit kan niet ongedaan gemaakt worden.')){libStore(lib.filter(function(q){return q!==x;}));fill();}
+    }
+  });
+  if(saving){inp.focus();inp.select();}
+}
 
 /* ---------- werkblad: tekening + meerkeuzevraag, afdrukken of als PDF bewaren ---------- */
 var LETTERS='ABCD';
@@ -1249,3 +1377,23 @@ if(!welcomeOff()||newsUnseen())setTimeout(showWelcome,250);
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){
   window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});
 }
+/* Nieuwe versie online? Kijk bij het openen, elk half uur en telkens het venster terug zichtbaar wordt
+   (een digibord blijft soms dagen open staan). Dan verschijnt bovenaan een balk om te vernieuwen. */
+function checkUpdate(){
+  if(location.protocol.indexOf('http')!==0||!navigator.onLine)return;
+  fetch('sw.js',{cache:'no-store'}).then(function(r){return r.ok?r.text():'';}).then(function(t){
+    var m=t.match(/VERSION\s*=\s*'([^']+)'/);
+    if(m&&m[1]!==APP_VERSION)document.getElementById('updBar').hidden=false;
+  }).catch(function(){});
+}
+document.getElementById('updGo').onclick=function(){
+  saveNow();
+  var go=function(){location.reload();};
+  if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration){
+    navigator.serviceWorker.getRegistration().then(function(r){return r&&r.update();}).then(go,go);
+  }else go();
+};
+document.getElementById('updLater').onclick=function(){document.getElementById('updBar').hidden=true;};
+setTimeout(checkUpdate,4000);
+setInterval(checkUpdate,30*60000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)checkUpdate();});

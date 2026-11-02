@@ -354,6 +354,27 @@ kbd{font:inherit; font-size:var(--fs-xs); padding:1px 6px; border:1px solid var(
   box-shadow:var(--sh-3);
 }
 
+/* balk "nieuwe versie" bovenaan */
+.updbar{
+  position:fixed; top:var(--sp-3); left:50%; transform:translateX(-50%); z-index:80; max-width:calc(100% - 32px);
+  display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-4);
+  background:var(--surface); color:var(--ink); border:1px solid var(--line); border-left:4px solid var(--sel);
+  border-radius:var(--r-lg); box-shadow:var(--sh-3); font-size:var(--fs-md);
+}
+/* mijn tekeningen */
+.libsave label{font-size:var(--fs-sm); color:var(--muted)}
+.librow{display:flex; gap:var(--sp-2); margin-top:4px}
+.librow input{flex:1; min-width:0; font:inherit; font-size:var(--fs-md); height:var(--h-ctl); padding:0 var(--sp-3); border:1px solid var(--line-strong); border-radius:var(--r-md); background:var(--surface); color:var(--ink)}
+.librow input:focus{outline:2px solid var(--accent); outline-offset:-1px}
+.gal.lib{max-height:52vh}
+.lib-card{position:relative; padding:0; cursor:default}
+.lib-open{font:inherit; color:inherit; text-align:left; display:flex; flex-direction:column; gap:6px; padding:var(--sp-2); background:none; border:0; cursor:pointer; border-radius:inherit}
+.lib-acts{position:absolute; top:calc(var(--sp-2) + 4px); right:calc(var(--sp-2) + 4px); display:flex; gap:2px; background:var(--surface); border-radius:var(--r-md); box-shadow:var(--sh-1); opacity:0; transition:opacity .12s}
+.lib-card:hover .lib-acts,.lib-card:focus-within .lib-acts{opacity:1}
+@media (pointer:coarse){.lib-acts{opacity:1}}
+.lib-empty{grid-column:1/-1; color:var(--muted); font-size:var(--fs-sm); margin:var(--sp-3) 0}
+body.dropping .stage{outline:3px dashed var(--accent); outline-offset:-8px}
+
 /* ===== Presentatiemodus: alleen de tekening, schermvullend ===== */
 .presbar{display:none}
 body.present{background:#000; height:100vh}
