@@ -392,6 +392,16 @@ body.present .presbar{
 body.present .presbar:hover,body.present .presbar:focus-within{opacity:1}
 .presbar .btn{color:#fff; border-radius:99px}
 .presbar .btn:hover{background:rgba(255,255,255,.14)!important}
+/* pen op het digibord */
+.presbar .btn.on{background:rgba(255,255,255,.22)!important}
+.inkgrp{flex-wrap:nowrap}
+.inkcols{display:inline-flex; gap:var(--sp-1); padding:0 var(--sp-1)}
+.inkcols button{width:26px; height:26px; border-radius:99px; border:2px solid rgba(255,255,255,.6); cursor:pointer; padding:0}
+.inkcols button.on{border-color:#fff; box-shadow:0 0 0 2px rgba(255,255,255,.45)}
+.inkcols [data-ink="#e3262e"]{background:#e3262e}.inkcols [data-ink="#ffcc00"]{background:#ffcc00}
+.inkcols [data-ink="#1b6ec2"]{background:#1b6ec2}.inkcols [data-ink="#2e9a57"]{background:#2e9a57}
+body.inking #scene{cursor:crosshair; touch-action:none}
+body.inking .presbar{opacity:1}
 #pLabel{font-size:var(--fs-md); padding:0 var(--sp-2); max-width:50vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 
 /* ===== Werkblad (afdruk én voorbeeld) ===== */

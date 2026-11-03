@@ -13,7 +13,7 @@ var store={cross:{items:[],vw:240,hw:240,arm:null},road:{items:[],roadW:280,orie
 var items=store.cross.items,roadS=store.road;
 var selId=null,uid=0,undoStack=[],redoStack=[],dir='bottom',curColor=COLORS[0],drag=null;
 var KEY='kruispunt-bouwer-v2';
-var APP_VERSION='v32';   /* moet gelijk zijn aan VERSION in sw.js; anders verschijnt de melding "nieuwe versie" */
+var APP_VERSION='v33';   /* moet gelijk zijn aan VERSION in sw.js; anders verschijnt de melding "nieuwe versie" */
 var ARMS=['top','bottom','left','right'];
 
 /* Zet bewaarde gegevens (localStorage of een geopend bestand) om naar de toestand van de app.
@@ -601,6 +601,8 @@ document.addEventListener('keydown',function(e){
     if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();presStep(1);return;}
     if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();presStep(-1);return;}
     if(e.key==='Escape'){setPresent(false);return;}
+    if(e.key.toLowerCase()==='p'&&!e.ctrlKey&&!e.metaKey){inkPen(!ink.on);return;}
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&ink.strokes.length){e.preventDefault();ink.strokes.pop();inkRender();return;}
   }
   var k=e.key.toLowerCase();
   if((e.ctrlKey||e.metaKey)&&(k==='y'||(k==='z'&&e.shiftKey))){e.preventDefault();redo();return;}
@@ -838,15 +840,56 @@ function openGallery(which){
   });
 }
 
+/* ---------- pen in de presentatiemodus: schrijven en aanduiden op het digibord ----------
+   De lijnen liggen boven de tekening, horen er niet bij en verdwijnen bij een ander voorbeeld of na de presentatie. */
+var ink={on:false,col:'#e3262e',strokes:[],cur:null},inkLayer=document.getElementById('ink');
+function inkPts(st){return st.p.map(function(q){return q.x.toFixed(1)+','+q.y.toFixed(1);}).join(' ');}
+function inkLine(st){return '<polyline points="'+inkPts(st)+'" fill="none" stroke="'+st.c+'" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>';}
+function inkRender(){inkLayer.innerHTML=ink.strokes.map(inkLine).join('');inkUI();}
+function inkUI(){
+  var pen=document.getElementById('pPen');pen.classList.toggle('on',ink.on);pen.setAttribute('aria-pressed',ink.on);
+  document.getElementById('pInkCols').hidden=!ink.on;
+  document.getElementById('pInkUndo').hidden=!ink.strokes.length;
+  document.getElementById('pInkClear').hidden=!ink.strokes.length;
+  document.querySelectorAll('#pInkCols [data-ink]').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-ink')===ink.col);});
+  document.body.classList.toggle('inking',ink.on&&document.body.classList.contains('present'));
+}
+function inkClear(){ink.strokes=[];ink.cur=null;inkRender();}
+function inkPen(on){ink.on=on;inkUI();}
+/* luisteraars in de vangfase: zolang de pen aan staat, gaat niets door naar het verslepen van onderdelen */
+svg.addEventListener('pointerdown',function(e){
+  if(!ink.on||!document.body.classList.contains('present'))return;
+  e.stopImmediatePropagation();e.preventDefault();
+  if(play)stopPlay();
+  try{svg.setPointerCapture(e.pointerId);}catch(er){}
+  ink.cur={c:ink.col,p:[pt(e)]};ink.strokes.push(ink.cur);
+  inkLayer.insertAdjacentHTML('beforeend',inkLine(ink.cur));
+},true);
+svg.addEventListener('pointermove',function(e){
+  if(!ink.cur)return;
+  e.stopImmediatePropagation();
+  var q=pt(e),l=ink.cur.p[ink.cur.p.length-1];
+  if(Math.hypot(q.x-l.x,q.y-l.y)<2.5)return;
+  ink.cur.p.push(q);inkLayer.lastChild.setAttribute('points',inkPts(ink.cur));
+},true);
+function inkEnd(e){if(!ink.cur)return;e.stopImmediatePropagation();ink.cur=null;inkUI();}
+svg.addEventListener('pointerup',inkEnd,true);
+svg.addEventListener('pointercancel',inkEnd,true);
+document.getElementById('pPen').onclick=function(){inkPen(!ink.on);};
+document.getElementById('pInkCols').onclick=function(e){var b=e.target.closest('[data-ink]');if(!b)return;ink.col=b.getAttribute('data-ink');inkPen(true);};
+document.getElementById('pInkUndo').onclick=function(){ink.strokes.pop();inkRender();};
+document.getElementById('pInkClear').onclick=inkClear;
+
 /* ---------- presentatiemodus: alleen de tekening, schermvullend; pijltjes = vorig/volgend voorbeeld ---------- */
 function presLabel(){var p=curPreset();document.getElementById('pLabel').textContent=p?p.label:'Eigen tekening';}
 function presStep(d){
   var L=PSETS[scene].list,p=curPreset(),i=p?L.indexOf(p):-1;
   i=i<0?(d>0?0:L.length-1):(i+d+L.length)%L.length;
-  applyPreset(L[i]);
+  inkClear();applyPreset(L[i]);
 }
 function setPresent(on){
   document.body.classList.toggle('present',on);
+  if(!on){inkClear();inkPen(false);}
   if(on){
     selId=null;render();presLabel();
     var el=document.documentElement;
@@ -1017,6 +1060,16 @@ function playStep(auto){
   if(play.gi>=play.groups.length){if(!auto)return;stopPlay();playStep(true);return;}
   play.auto=!!auto;
   var mv={};play.groups[play.gi].forEach(function(id){var it=find(id);if(it)mv[id]=prepRoute(it);});
+  /* wie in dezelfde stap recht achter een trager voertuig rijdt (zelfde richting, zelfde strook), blijft erachter */
+  play.groups[play.gi].forEach(function(id){
+    var b=find(id);if(!b||!mv[id])return;
+    play.groups[play.gi].forEach(function(id2){
+      var a=find(id2);if(!a||id2===id||!mv[id2]||(a.route&&a.route!=='s')||(b.route&&b.route!=='s'))return;
+      var dr=Math.abs(((a.rot-b.rot)%360+540)%360-180);if(dr>15)return;
+      var h=b.rot*Math.PI/180,dx=a.x-b.x,dy=a.y-b.y,ahead=dx*Math.sin(h)-dy*Math.cos(h),side=dx*Math.cos(h)+dy*Math.sin(h);
+      if(ahead>0&&ahead<450&&Math.abs(side)<40)mv[id].v=Math.min(mv[id].v,mv[id2].v);
+    });
+  });
   play.moving=mv;play.gi++;play.last=0;
   playRaf=requestAnimationFrame(playTick);
   playUI();
@@ -1083,6 +1136,7 @@ function renderPng(){
   return new Promise(function(res,rej){
     var clone=svg.cloneNode(true);
     var s=clone.querySelector('#sel');if(s)s.remove();
+    var k=clone.querySelector('#ink');if(k)k.remove();
     clone.setAttribute('xmlns',SVGNS);clone.setAttribute('width',W);clone.setAttribute('height',H);
     var str=new XMLSerializer().serializeToString(clone);
     var img=new Image();
@@ -1152,9 +1206,10 @@ document.getElementById('bAbout').onclick=function(){
    Na een nieuwe versie met NEWS verschijnt het altijd één keer, met de vernieuwingen bij de juiste stap.
    Bij een nieuwe versie: NEWS.id aanpassen en de items vervangen (step = 1, 2 of 3). */
 var WELCOME_OFF='verkeer-welkom-uit',NEWS_SEEN='verkeer-nieuws-gezien';
-var NEWS={id:'v32',items:[
-  {step:1,t:'De voorbeelden zijn opgeruimd: dubbele weg, en bijna elk voorbeeld heeft nu een meerkeuzevraag en kan afgespeeld worden. Nieuw: hindernis voorbijrijden (met tegenligger), ritsen en "Rotonde: welke afrit?".'},
-  {step:3,t:'Afspelen op de rechte weg: een voertuig kan nu ook van rijstrook wisselen, een hindernis voorbijrijden of aan de kant stilstaan. Kies het bij "Rijdt".'}
+var NEWS={id:'v33',items:[
+  {step:1,t:'Nieuw voorbeeld op de rechte weg: "Fietsstraat: auto achter een fietser".'},
+  {step:2,t:'Nieuwe borden: zone 30 (begin en einde), schoolomgeving, opgelet kinderen (A23) en fietsstraat (begin en einde). Verschillende borden zijn opnieuw nagetekend zodat ze nog beter op de officiële lijken (onder meer A21, A25, werken, F49, voorrangsweg, rotonde en afslaan verboden).'},
+  {step:3,t:'Presenteren heeft nu een pen: schrijf en duid aan op het digibord in rood, geel, blauw of groen. De tekening zelf verandert niet; wat je schreef verdwijnt bij een ander voorbeeld of als je stopt.'}
 ]};
 function welcomeOff(){try{return localStorage.getItem(WELCOME_OFF)==='1';}catch(e){return false;}}
 function newsUnseen(){try{return localStorage.getItem(NEWS_SEEN)!==NEWS.id;}catch(e){return false;}}

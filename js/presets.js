@@ -90,6 +90,14 @@ var PRESETS=[
     return edgeLines(372,628).concat([I('solid',500,430,{h:860}),
       I('tree',548,300,{rot:6,s:.62}),go(I('car',564,700,{color:C.orange}),2,'o'),go(I('car',436,150,{rot:180,color:C.blue}),1),
       I('tag',564,795,{text:'A'}),I('tag',436,45,{text:'B'})]);
+  }},
+  {id:'p11',label:'Fietsstraat: auto achter een fietser',roadW:280,
+    q:{question:'Auto B rijdt in een fietsstraat achter fietser A. Wat mag B?',answers:['Achter de fietser blijven: inhalen mag niet en hoogstens 30 km/u','De fietser inhalen als er geen tegenligger is','Claxonneren zodat de fietser aan de kant gaat','De fietser inhalen, op voorwaarde dat hij niet sneller rijdt dan 30 km/u'],correct:0},
+    build:function(){
+    /* fietsstraat zonder middenstreep; de fietser rijdt midden op de rechterhelft */
+    return edgeLines(372,628).concat([I('f111',680,770),
+      go(I('bike',560,470,{color:C.blue}),1),go(I('car',560,690,{color:C.red}),1),
+      tagAt(612,470,'A'),tagAt(620,690,'B')]);
   }}
 ];
 /* ---------- voorbeeldsituaties (kruispunt) ---------- */

@@ -147,14 +147,32 @@ function glyph(ch,w,h,sw){
     case '7':return 'M0 0H'+f(w)+'L'+f(w*.32)+' '+f(h+e);
     case '8':ru=h*.235;return ell(r,ru,r*.88,ru)+ell(r,2*ru+(h/2-ru),r,h/2-ru);
     case '9':return six(w,h,function(p){return [w-p[0],h-p[1]];});
-    case 'S':ru=h*.24;rl=h/2-ru;
-      return 'M'+P(pt(r,ru,r,ru,-28))+arc(r,ru,1,0,[r,2*ru])+arc(r,rl,1,1,pt(r,2*ru+rl,r,rl,152));
+    case 'S':return sShape(w,h,0);
+    case 'Z':return 'M0 0H'+f(w)+'L0 '+f(h)+'H'+f(w);
+    case 'N':return 'M0 '+f(h+e)+'V0L'+f(w)+' '+f(h)+'V'+f(-e);
+    case 'E':return 'M'+f(w)+' 0H0V'+f(h)+'H'+f(w)+'M0 '+f(h/2)+'H'+f(w*.88);
+    case 'F':return 'M'+f(w)+' 0H0V'+f(h+e)+'M0 '+f(h*.48)+'H'+f(w*.85);
+  }
+  /* kleine letters: x-hoogte vanaf xt tot onderaan */
+  var xt=h*.3,xr=(h-xt)/2,cy=xt+xr;
+  switch(ch){
+    case 'i':return 'M'+f(r)+' '+f(-e*.8)+'V'+f(sw*.5)+'M'+f(r)+' '+f(xt+e*.6)+'V'+f(h+e);
+    case 't':return 'M'+f(w*.38)+' '+f(h*.04)+'V'+f(h-xr*.55)+'Q'+f(w*.38)+' '+f(h)+' '+f(w*1.05)+' '+f(h)+'M'+f(-e)+' '+f(xt)+'H'+f(w+e);
+    case 'e':return 'M0 '+f(cy)+'H'+f(w)+arc(r,xr,0,0,[0,cy])+arc(r,xr,0,0,pt(r,cy,r,xr,35));
+    case 's':return sShape(w,h-xt,xt);
+    case 'r':return 'M0 '+f(xt-e)+'V'+f(h+e)+'M0 '+f(xt+xr*.9)+'Q0 '+f(xt)+' '+f(w)+' '+f(xt);
+    case 'a':return 'M'+f(w*.08)+' '+f(xt+xr*.3)+'Q'+f(w*.25)+' '+f(xt)+' '+f(r)+' '+f(xt)+'Q'+f(w)+' '+f(xt)+' '+f(w)+' '+f(xt+xr*.7)+'V'+f(h+e)+
+      'M'+f(w)+' '+f(cy)+'H'+f(r)+'Q0 '+f(cy)+' 0 '+f(cy+xr*.5)+'Q0 '+f(h)+' '+f(r)+' '+f(h)+'Q'+f(w)+' '+f(h)+' '+f(w)+' '+f(cy+xr*.3);
     case 'T':return 'M'+f(-e)+' 0H'+f(w+e)+'M'+f(r)+' 0V'+f(h+e);
     case 'P':var hb=h*.56;return 'M0 '+f(h+e)+'V0H'+f(w-hb/2)+arc(hb/2,hb/2,0,1,[w-hb/2,hb])+'H0';
   }
   return '';
 }
-var NARROW={'1':.62};
+function sShape(w,h,oy){
+  var r=w/2,ru=h*.24,rl=h/2-ru;
+  return 'M'+P(pt(r,oy+ru,r,ru,-28))+arc(r,ru,1,0,[r,oy+2*ru])+arc(r,rl,1,1,pt(r,oy+2*ru+rl,r,rl,152));
+}
+var NARROW={'1':.62,'i':.35,'t':.7,'r':.65,'s':.85};
 /* tekst gecentreerd op (cx,cy); W = breedte van één teken, H = hoogte, buitenmaten */
 function letters(str,cx,cy,W,H,gap,sw,col){
   var e=sw/2,ws=[],tot=-gap,i,x,d='';
@@ -176,14 +194,6 @@ function bicycle(col,sw){
     '<path d="M8.4 -12.6L8 -15.2Q6.6 -16.6 4.4 -16" />'+
     '<circle cx="-.5" cy="0" r="2.6"/><path d="M-.5 0L1.6 3.4" />'+
     '</g><circle cx="-13" cy="0" r="1.1" fill="'+col+'"/><circle cx="13" cy="0" r="1.1" fill="'+col+'"/><circle cx="-.5" cy="0" r=".9" fill="'+col+'"/>';
-}
-/* fietser als silhouet, rijdt naar rechts; zit op het zadel van bicycle() */
-function rider(col){
-  var l='stroke="'+col+'" fill="none" stroke-linecap="round" stroke-linejoin="round"';
-  return '<path d="M-4.4 -16.4L-1.6 -27.6" '+l+' stroke-width="5.4"/>'+
-    '<circle cx="-.2" cy="-32.2" r="3.1" fill="'+col+'"/><path d="M-3.2 -34.2Q-.4 -36.8 2.8 -34.4L3.6 -33.2H-3.4Z" fill="'+col+'"/>'+
-    '<path d="M-1.2 -26L2.6 -21.4L4.8 -16.4" '+l+' stroke-width="2.3"/>'+
-    '<path d="M-4.2 -15.6L3.6 -12.4L1.8 -3.2" '+l+' stroke-width="3.4"/><path d="M1.8 -3.2H4" '+l+' stroke-width="2.2"/>';
 }
 /* pijl op een rijstrookbord */
 function laneArrow(c,x){
@@ -219,6 +229,19 @@ function mergePlate(){
     '<path d="M9 -17V-33L-6 -47" fill="none" stroke="#fff" stroke-width="8" stroke-linejoin="miter"/>'+
     '<rect x="-10" y="-58" width="8" height="41" fill="#fff"/><polygon points="-17,-57 5,-57 -6,-73" fill="#fff"/>';
 }
+/* PICTO-BEGIN: pictogrammen, nagetekend naar de officiële borden (omtrek opgemeten, in bordcoördinaten) */
+var PIC={
+  a21:'M-0.6 -60.5L1.2 -60.6L1.9 -60.1L2 -59.7L2.1 -55L4.8 -54.2L8.2 -50.3L8.5 -49.5L9.3 -44.4L9.3 -43.6L9.1 -43.3L8 -43.1L7.7 -43.4L6.8 -48L5.1 -49.9L4.6 -50.5L4.4 -50.4L4.3 -43.6L7.4 -36.5L7.5 -36.2L8.1 -36L8 -35L9.9 -30.8L9.7 -30.5L6.8 -29.1L6.5 -29.3L6.3 -29.8L6.9 -30.9L6.9 -31.3L1.5 -40.3L1.1 -39.8L-0.8 -36.2L-0.6 -36L-1.8 -34.3L-4.6 -29L-8.1 -30.5L-8.3 -30.8L-7.8 -31.6L-6.5 -31.7L-1.2 -43.5L-1.2 -44.3L-1.4 -44.8L-1.5 -48L-1.7 -49.2L-1.9 -49.3L-3.3 -47.4L-8 -45L-8.3 -45L-8.7 -45.4L-9.1 -46.1L-4.7 -49.2L-2.4 -53.8L-0.6 -54.4L-0.4 -54.5L-0.4 -55.3L-1.2 -56L-1.4 -56.3L-1.4 -59.9L-1.1 -60.3ZM-20.2 -36L-18.5 -36.1L-18.3 -36L-18.8 -35.3L-20.4 -35.2L-20.7 -35.4ZM-15.8 -36L-14.1 -36.1L-13.8 -36L-14.3 -35.3L-16 -35.2L-16.3 -35.4ZM-11.3 -36L-9.7 -36.1L-9.4 -36L-9.9 -35.3L-11.6 -35.2L-11.8 -35.4ZM-6.9 -36L-5.3 -36.1L-5 -36L-5.5 -35.3L-7.1 -35.2L-7.4 -35.4ZM1.8 -36L3.4 -36.1L3.7 -35.9L3.3 -35.3L1.7 -35.2L1.4 -35.4ZM10.6 -36L12.2 -36.1L12.6 -35.9L12.2 -35.3L10.5 -35.2L10.3 -35.4ZM15 -36L16.7 -36.1L17 -35.9L16.6 -35.3L15 -35.2L14.7 -35.4ZM19.5 -36L21.1 -36.1L21.4 -35.9L21 -35.3L19.4 -35.2L19.1 -35.4ZM-25.3 -27.2L-23.8 -27.2L-23.5 -27.1L-24 -26.3L-25.5 -26.2L-25.8 -26.4ZM-20.9 -27.2L-19.4 -27.2L-19.1 -27.1L-19.6 -26.3L-21.1 -26.2L-21.4 -26.4ZM-16.4 -27.2L-15 -27.2L-14.7 -27.1L-15.2 -26.3L-16.7 -26.2L-17 -26.4ZM-12 -27.2L-10.5 -27.2L-10.2 -27.1L-10.8 -26.3L-12.2 -26.2L-12.6 -26.4ZM-7.6 -27.2L-6.1 -27.2L-5.8 -27.1L-6.3 -26.3L-7.8 -26.2L-8.1 -26.4ZM-3.2 -27.2L-1.7 -27.2L-1.4 -27.1L-1.9 -26.3L-3.4 -26.2L-3.7 -26.4ZM1.2 -27.2L2.7 -27.2L3 -27.1L2.5 -26.3L1 -26.2L0.7 -26.4ZM5.7 -27.2L7.1 -27.2L7.5 -27.1L6.9 -26.3L5.4 -26.2L5.1 -26.4ZM10.1 -27.2L11.6 -27.2L11.9 -27.1L11.3 -26.3L9.9 -26.2L9.5 -26.4ZM14.4 -27.2L16 -27.2L16.3 -27.1L15.8 -26.3L14.3 -26.2L14 -26.3L14 -26.6ZM18.8 -27.2L20.4 -27.2L20.7 -27.1L20.2 -26.3L18.7 -26.2L18.4 -26.3L18.4 -26.6ZM23.2 -27.2L24.8 -27.2L25.2 -27.1L24.6 -26.3L23.1 -26.2L22.9 -26.3L22.8 -26.6Z',
+  a25:'M-0.8 -54.9L-0.2 -54.9L0.6 -54.3L1 -53.6L1 -52.9L1.4 -52L3.3 -50.3L4.9 -47.8L6.1 -44.6L6.4 -43.2L6.4 -42.9L6.6 -42.6L5.9 -42.1L5.6 -41.4L5.7 -40.9L6.5 -39L7 -38.8L8.2 -39.1L9 -39.2L10.7 -38.8L12.3 -37.8L13 -37.1L13.7 -35.9L13.7 -35.5L13.4 -36L13.3 -35.9L13.8 -34.4L13.8 -32.9L13.2 -31L11.6 -29.2L10.5 -28.7L9.9 -28.5L8.5 -28.3L7.5 -28.5L5.8 -29.2L5.2 -29.6L4.3 -30.7L3.8 -31.7L3.6 -33.2L3.4 -33.4L3.2 -33.1L2.9 -33.4L2.6 -33.3L2.3 -32.7L1.6 -32.1L1.5 -31.5L1.7 -31.2L1.5 -30.9L0.5 -30.8L-1 -31.1L-0.8 -31.4L-0.1 -31.6L0.3 -31.9L-0.5 -32L-0.7 -32.2L-0.7 -35.2L-5.3 -39.6L-5.8 -38.3L-4.4 -37.2L-3.6 -36L-3.1 -34.6L-2.9 -33.5L-3.1 -33.1L-3.3 -33.3L-3.8 -31.4L-4.7 -29.9L-5.3 -29.3L-6.5 -28.7L-7.7 -28.3L-9.5 -28.3L-10.3 -28.5L-11.9 -29.3L-12.5 -29.9L-13.2 -31L-13.8 -33L-13.6 -34.7L-13 -36L-12 -37.3L-10.3 -38.3L-9.5 -38.5L-7.7 -38.5L-6.2 -38L-6.7 -38.4L-8.2 -38.8L-9.7 -38.6L-11.1 -38.2L-11.1 -38.3L-9.2 -39L-7.8 -39L-6.3 -38.5L-6 -38.5L-4.5 -43.2L-3.6 -43.3L-2.7 -44L-1.9 -44.1L-1.4 -44.3L0.1 -46L0.3 -46.6L-0.2 -48.2L-0.3 -50.2L0.1 -51.1L0 -51.2L-0.6 -51L-1.5 -51.8L-1.6 -52.4L-2.2 -53.1L-2.2 -53.6L-1.4 -54.5ZM1.8 -45.2L-0.7 -43.1L-1.7 -43.1L-2.9 -42.6L-3.4 -42.7L-4.4 -42.7L-4.7 -41.6L-4.6 -41.4L-3.4 -41.4L1.1 -43.6L1.8 -44.3L2 -44.9ZM-4.6 -41.2L-5.1 -40.6L-5.1 -40.2L-4 -38.9L-0.7 -35.8L-0.7 -36.4L-0.9 -36.9L-3.7 -40.2L-3.8 -41.1ZM4.8 -41.2L2.3 -38.9L1.8 -38.1L1.4 -37.2L1.6 -35.1L1.8 -35.3L4.2 -39.7L4.9 -41.1ZM5.2 -40.8L1.9 -34.9L2.7 -33.6L3 -33.8L3.5 -35.7L4.1 -36.9L5.1 -37.8L6.2 -38.7ZM0.1 -40.5L-0.6 -40.1L-0.8 -39.9L-0.4 -39.6ZM7.7 -38.8L6.9 -38.6L7 -38.3L8 -38.6L9.2 -38.6L10.7 -38.3L12 -37.5L13 -36.3L13 -36.6L12.3 -37.5L10.8 -38.4L9.7 -38.8ZM6.3 -38.3L5.2 -37.7L4.6 -37L3.8 -35.9L3.4 -34.7L3.3 -33.8L3.6 -33.9L3.6 -34.6L4.1 -36L5.6 -37.7L6.3 -38.1ZM7.8 -38.1L7.2 -37.9L7.2 -37.5L8.4 -34.6L9.6 -34.3L12.4 -36L12.1 -36.6L10.7 -37.7L9.3 -38.1ZM-9.5 -38L-10.7 -37.6L-11.7 -36.9L-12.5 -35.9L-13.3 -33.9L-13.1 -32L-12 -30.2L-11.2 -29.5L-9.5 -28.8L-7.7 -28.8L-6.5 -29.2L-5.2 -30.1L-4.1 -31.9L-3.9 -33L-4.3 -33.4L-7.3 -33.4L-7.6 -33.3L-8.4 -32.6L-8.7 -32.5L-9.1 -32.8L-9.4 -33.4L-9.2 -33.9L-8.7 -34.2L-8.2 -34.1L-7.5 -34.8L-6.7 -36.3L-6.5 -37.4L-7.5 -38ZM-5.8 -37.9L-5.8 -37.8L-4.7 -36.8L-4.1 -36L-3.6 -34.7L-3.5 -33.9L-3.3 -33.6L-3.2 -34.2L-3.8 -35.9L-4.7 -37.2ZM6.5 -37.6L5.7 -37.2L4.8 -36.2L4.1 -34.6L4 -33.8L4.1 -33.6L5.6 -33.5L6.1 -33.7L7.5 -33.7L7.9 -34.3L7.9 -34.7L7.1 -36.7L6.8 -37.4ZM-6 -37.2L-6.9 -35.1L-7.9 -33.8L-7.3 -33.5L-4.1 -33.6L-3.9 -34L-4.6 -35.9L-5.1 -36.5ZM12.7 -35.7L9.8 -34L9.7 -33.2L9.5 -32.8L8.8 -32.4L8 -32.6L7.5 -33.4L4.1 -33.3L4.1 -32.4L4.3 -31.7L5.2 -30.3L6.9 -29.2L8.5 -28.8L10 -29L11.4 -29.8L12.5 -30.9L13 -31.9L13.3 -32.7L13.3 -34.4L13 -35.2Z',
+  a31:'M1.1 -59.9L1.9 -59.9L3.5 -59.2L4.5 -58.4L5.1 -57.5L5.1 -57L4.8 -56.3L4.9 -55.6L4.3 -55.6L2.8 -54.2L2.1 -54.1L1.9 -53.8L1.9 -53.5L3.2 -51.9L3.4 -51.2L3.4 -50.6L2.9 -49.4L2.7 -47.8L2.2 -46L2.2 -42.9L2.6 -41.9L3.2 -41.3L4.1 -40.7L7.8 -39.1L9.8 -38.1L10.4 -37.5L11.1 -37.3L12 -37.3L14.9 -39.8L15.7 -40.2L16.6 -40.1L18.4 -38.2L19.9 -36L20.1 -35L20.6 -34.2L20.6 -33.2L21 -31.9L21.7 -31.1L21.8 -30.5L22.1 -30.1L22.1 -29.1L22.3 -28.7L23 -28.3L22.9 -26.8L-24.9 -26.8L-24.9 -29.1L-24 -29.1L-23.1 -29L-21.5 -29.2L-18.7 -32.3L-18.1 -33.2L-17.2 -33.7L-16.7 -33.7L-16.1 -33.4L-14.2 -31.4L-13.8 -30.8L-11.7 -28.8L-10.3 -28.8L-10 -30.3L-10.4 -33.2L-9.9 -36.9L-10.2 -38.5L-10.2 -39.5L-9.9 -40.5L-10.4 -42.2L-10.4 -43.1L-10.2 -44.1L-9.6 -45.6L-11.2 -46.7L-11.4 -48.5L-11 -50L-10.2 -52.3L-10.3 -52.9L-9.8 -53.6L-6.3 -55L-5.2 -55.9L-3.2 -56L-1.4 -56.7L-0.4 -56.4L0.3 -57.1L0.4 -57.7L0.4 -58.7L0.6 -59.3ZM-6 -52.1L-8.3 -51L-8.3 -49.9L-8.8 -48.3L-8.5 -47.9L-8.2 -47.9L-6.7 -50.3L-5.8 -52ZM-1.1 -48.4L-1.8 -47.8L-2.2 -46.6L-2.2 -46L-2 -45.3L-1.2 -44.5L-1 -44.6L-1.2 -45.3ZM-4.6 -41.5L-5.2 -40.8L-6.3 -37.4L-6.3 -35.6L-6.6 -34.7L-6.6 -33.2L-7 -32.5L-6.8 -31.9L-7.1 -31.2L-7.1 -30.7L-7 -30.5L-6.1 -30.5L-5.8 -30.3L-5.8 -29.6L-6.1 -28.8L-5.9 -28.6L-1.7 -28.6L-1.6 -28.7L-2.5 -30L-2.7 -30.1L-3 -29.9L-4 -30.8L-4.1 -31.2L-3.1 -32.2L-2.7 -34.4L-2 -36.6L-1.1 -38.3ZM3.2 -40.7L3.1 -40.4L3.7 -39.1L3.7 -38L0.6 -32.4L-0.1 -31.8L0.2 -31.4L0.6 -31.3L1.2 -29.9L2.2 -28.9L2.3 -28.5L2.6 -28.4L2.9 -28.6L4.1 -29.7L4.5 -29.9L6.2 -30.9L7.1 -32.4L8.1 -33.4L9.1 -33.9L9.7 -34.5L10.4 -35.7L11.3 -36.6L10.1 -37.2L9.3 -37.9L8.6 -38.3Z',
+  f49w:'M-20.1 -60.7L19.9 -60.8L20.4 -60.6L21.2 -60.2L22.1 -59.2L22.6 -58.4L22.8 -57.9L22.8 -18.1L22.6 -17.6L22.2 -16.8L21.2 -15.9L20.4 -15.4L19.9 -15.2L-19.9 -15.2L-20.4 -15.4L-21.2 -15.8L-22.1 -16.8L-22.6 -17.6L-22.8 -18.1L-22.8 -57.9L-22.6 -58.4L-22.1 -59.2L-21.2 -60.2ZM-19.1 -59.8L-19.6 -59.6L-20.5 -59.2L-21.1 -58.6L-21.6 -57.6L-21.8 -57L-21.8 -19L-21.6 -18.4L-21 -17.3L-20.5 -16.8L-19.6 -16.4L-19 -16.2L19 -16.2L19.6 -16.4L20.6 -16.9L21.3 -17.7L21.6 -18.4L21.8 -19L21.8 -57L21.6 -57.6L21 -58.7L20.5 -59.2L19.6 -59.6L19 -59.8ZM-0.1 -55.7L0.3 -55.3L14.6 -30.4L14.5 -30.2L14 -30.1L13.8 -29.7L14.9 -29.7L15.2 -29.4L19 -22.9L18.9 -22.7L17.7 -22.6L17.5 -22.4L17.4 -22L19.4 -22L20.2 -20.7L20.3 -20.4L-20.4 -20.4L-20.4 -20.5ZM-1.2 -47.2L-1.6 -46.9L-1.8 -46.3L-1.8 -44.3L-1.6 -43.8L-1.2 -43.4L-0.9 -43.3L-0.9 -42.7L-2.5 -42.2L-4.3 -38.6L-7.5 -36.4L-6.9 -35.6L-6.6 -35.6L-2.9 -37.5L-2 -38.8L-1.9 -38.4L-1.9 -37.5L-1.8 -37.2L-1.7 -35.1L-1.6 -34.8L-1.6 -34.5L-5.6 -25.8L-5.8 -25.7L-6.4 -25.7L-7 -24.9L-4.6 -23.8L-4 -23.7L-1 -29.5L-0.8 -29.7L-0.2 -29.7L-0 -29.8L0.1 -30.2L-0.5 -30.3L0.5 -32.1L4.5 -25.3L4 -24.2L4.4 -23.7L6.7 -24.8L6.8 -25L2.6 -34.6L2.7 -39.5L2.8 -39.6L4.3 -38L5 -34.6L5.2 -34.1L6.3 -34.3L6.4 -34.5L5.7 -39.3L3 -42.5L2.7 -42.7L1.1 -43L1 -43.1L1 -46.3L0.8 -46.9L0.4 -47.2ZM-13.8 -30.2L-14 -30.1L-14.1 -29.8L-13.9 -29.7L-12.2 -29.7L-12 -29.9L-11.8 -30.1L-12 -30.2ZM-9.8 -30.2L-10 -30.1L-10.1 -29.8L-9.9 -29.7L-8.2 -29.7L-7.8 -30.1L-8 -30.2ZM-5.8 -30.2L-6.2 -29.8L-6 -29.7L-4.2 -29.7L-4 -29.8L-3.9 -30.1L-4.1 -30.2ZM6.1 -30.2L5.8 -29.8L6 -29.7L7.8 -29.7L8.1 -30.1L7.9 -30.2ZM10.1 -30.2L9.8 -29.8L10 -29.7L11.8 -29.7L12.1 -30.1L11.9 -30.2ZM-18.1 -22.7L-18.5 -22.2L-18.5 -22L-18.3 -22L-16.6 -22L-16.2 -22.6L-16.4 -22.7ZM-14.1 -22.7L-14.5 -22.2L-14.5 -22L-14.3 -22L-12.7 -22L-12.4 -22.2L-12.2 -22.6L-12.4 -22.7ZM-10.1 -22.7L-10.4 -22.5L-10.5 -22.2L-10.5 -22L-10.3 -22L-8.7 -22L-8.4 -22.2L-8.2 -22.6L-8.4 -22.7ZM-6.2 -22.7L-6.5 -22.1L-6.3 -22L-4.7 -22L-4.2 -22.6L-4.4 -22.7ZM-2.2 -22.7L-2.5 -22.1L-2.3 -22L-0.7 -22L-0.5 -22.1L-0.3 -22.6L-0.4 -22.7ZM1.8 -22.7L1.5 -22.2L1.5 -22L1.7 -22L3.3 -22L3.5 -22.1L3.7 -22.6L3.6 -22.7ZM5.8 -22.7L5.6 -22.5L5.5 -22.2L5.5 -22L5.7 -22L7.3 -22L7.7 -22.6L7.6 -22.7ZM9.8 -22.7L9.6 -22.5L9.4 -22.1L9.6 -22L11.3 -22L11.7 -22.6L11.4 -22.7ZM13.8 -22.7L13.4 -22.2L13.4 -22L13.6 -22L15.3 -22L15.7 -22.6L15.4 -22.7Z',
+  f49d:'M-1.2 -47.2L0.3 -47.2L0.7 -47L0.9 -46.6L0.9 -43.1L1 -43L2.5 -42.7L2.9 -42.5L5.2 -39.8L5.7 -39.1L6.4 -34.5L6.1 -34.3L5.2 -34.2L5 -34.8L4.4 -37.7L4 -38.4L3.1 -39.4L2.8 -39.7L2.7 -39.7L2.7 -38.1L2.6 -37.7L2.6 -34.5L6.7 -25L6.6 -24.8L4.5 -23.8L4.3 -23.9L4 -24.2L4.5 -25L4.5 -25.3L2.1 -29.5L0.4 -32.1L-0.5 -30.3L-0.4 -30.2L0.1 -30.2L-0.1 -29.8L-0.2 -29.7L-0.9 -29.6L-1.1 -29.4L-4.1 -23.8L-4.5 -23.8L-6.9 -25L-6.4 -25.6L-5.9 -25.7L-5.7 -25.6L-5.5 -25.8L-1.6 -34.4L-1.6 -35.3L-1.7 -35.7L-1.9 -39L-2.2 -38.7L-3.1 -37.4L-6.7 -35.6L-7.5 -36.4L-4.2 -38.6L-2.4 -42.2L-0.8 -42.7L-0.8 -43.3L-1.4 -43.5L-1.7 -44L-1.7 -46.7L-1.5 -47ZM-13.8 -30.2L-12.1 -30.2L-11.9 -30.1L-12 -29.8L-12.2 -29.7L-13.9 -29.7L-14.1 -29.8ZM-9.8 -30.2L-8.1 -30.2L-7.9 -30.1L-8.2 -29.7L-9.9 -29.7L-10.1 -29.8ZM-5.8 -30.2L-4.1 -30.2L-3.9 -30.1L-4.2 -29.7L-5.9 -29.7L-6.1 -29.8ZM6.1 -30.2L7.9 -30.2L8.1 -30.1L7.7 -29.7L6 -29.7L5.8 -29.8ZM10.1 -30.2L11.8 -30.2L12 -30.1L11.9 -29.8L11.7 -29.7L10 -29.7L9.8 -29.8ZM14.1 -30.2L14.7 -30.2L15 -29.7L13.8 -29.7ZM-18.1 -22.6L-16.4 -22.7L-16.2 -22.6L-16.6 -22.1L-18.2 -22.1L-18.4 -22.2ZM-14.2 -22.6L-12.4 -22.7L-12.3 -22.6L-12.6 -22.1L-14.2 -22.1L-14.4 -22.2ZM-10.2 -22.6L-8.5 -22.7L-8.3 -22.5L-8.6 -22.1L-10.3 -22.1L-10.4 -22.2ZM-6.2 -22.6L-4.5 -22.7L-4.3 -22.5L-4.7 -22.1L-6.3 -22.1L-6.4 -22.2ZM-2.2 -22.6L-0.6 -22.7L-0.3 -22.6L-0.5 -22.3L-0.7 -22.1L-2.3 -22.1L-2.5 -22.2ZM1.8 -22.6L3.4 -22.7L3.7 -22.6L3.5 -22.3L3.3 -22.1L1.7 -22.1L1.5 -22.2ZM5.8 -22.6L7.4 -22.7L7.7 -22.6L7.5 -22.3L7.3 -22.1L5.7 -22.1L5.5 -22.2ZM9.8 -22.6L11.4 -22.7L11.7 -22.6L11.3 -22.1L9.7 -22.1L9.5 -22.2ZM13.7 -22.6L15.4 -22.7L15.6 -22.6L15.3 -22.1L13.7 -22.1L13.5 -22.2ZM17.7 -22.6L19 -22.7L19.2 -22.5L19.3 -22.2L19.1 -22.1L17.6 -22.1L17.5 -22.3Z',
+  f111r:'M-11.4 -54.4L-6.5 -54.5L-6.3 -54.3L-6.5 -53.5L-6.8 -53.2L-10.1 -53.1L-14.4 -43.6L-14.8 -42.6L-11.2 -42.8L-10.8 -43L-8.8 -43L-8.3 -43.2L-6.2 -43.2L-5.5 -43.3L-3.4 -43.3L-3.4 -38.2L-8.8 -38.2L-9 -38L-9 -37.7L-8.9 -37.4L-8.7 -37.2L-3.5 -37.2L-3.3 -37L-3.3 -36.2L-3.5 -36L-4.8 -36L-5.3 -35.7L-12.8 -35.7L-13 -35.5L-12.9 -34.7L-5.3 -34.7L-4.7 -34.3L-1.3 -34.3L-1 -34.7L-0.2 -34.7L0 -34.3L-0 -33.2L-0.2 -33L-8.7 -33L-8.8 -32.8L-8.8 -32.3L-8.8 -32.1L-8.5 -32L-0.2 -32L-0 -31.8L-0 -30.3L-0.3 -30.2L-12.1 -30.1L-12.3 -29.7L-12.4 -24.4L-15.8 -24.3L-16 -24.7L-16 -30L-16.2 -30.2L-16.9 -30.2L-18 -33.2L-18.3 -34.7L-18.3 -41.2L-16.7 -43.1L-11.9 -53.6ZM-4.4 -54.4L-2.9 -54.4L-2.7 -53.2L-4.8 -53.2ZM5.1 -54.4L6.6 -54.4L6.9 -53.2L4.9 -53.2L4.8 -53.8ZM8.4 -54.4L10.8 -54.5L11.3 -54.3L16.4 -43.1L18 -41.2L18 -34.5L16.6 -30.2L15.8 -30.2L15.7 -30L15.7 -24.7L15.5 -24.3L12.1 -24.4L12 -29.7L11.8 -30.1L5.8 -30.2L5.5 -30.3L5.6 -31.9L8.3 -32L8.5 -32.3L8.5 -32.8L8.3 -33L5.6 -33.1L5.6 -34.6L12.3 -34.7L12.6 -34.7L12.7 -35L12.7 -35.5L12.5 -35.7L5.6 -35.7L5.6 -37.1L8.7 -37.2L8.9 -37.4L9 -37.8L8.8 -38.2L5.6 -38.2L5.6 -43.3L10.5 -43L10.8 -42.8L12.3 -42.8L14.3 -42.5L14.5 -42.7L9.9 -52.8L9.7 -53.2L8.7 -53.2ZM-0.8 -43.4L0.2 -43.5L0.5 -43.2L0.5 -39.7L0.3 -39.3L0.3 -38.3L0.2 -38.2L-1 -38.2L-1.2 -38.3L-1.2 -43.2ZM1.7 -43.3L3.2 -43.3L3.3 -43.2L3.3 -38.5L3.2 -38.2L2 -38.2L1.8 -38.3L1.7 -39.8ZM-14.3 -40.8L-15.3 -40.4L-15.8 -39.9L-16.2 -39.2L-16.2 -38.3L-15.8 -37.6L-15.3 -37.1L-14.5 -36.7L-13.8 -36.7L-13.1 -37.1L-12.6 -37.6L-12.2 -38.3L-12.2 -39.2L-12.6 -39.9L-13.1 -40.4ZM13.3 -40.7L12.8 -40.4L12.1 -39.6L11.8 -39L11.8 -38.3L12.1 -37.7L12.9 -36.9L13.3 -36.7L14.3 -36.7L14.9 -37L15.6 -37.7L15.8 -38.3L15.8 -39L15.3 -40.1L14.8 -40.4L14.3 -40.7ZM-1.1 -37.1L-0.1 -37.1L-0.1 -35.7L-1.1 -35.7ZM2.2 -37.1L3.3 -37.1L3.3 -35.7L2.2 -35.7ZM2.2 -34.6L3.3 -34.6L3.3 -33.1L2.2 -33.1ZM2.2 -31.9L3.3 -31.9L3.3 -30.2L2.2 -30.2Z',
+  f111w:'M-21.3 -72.4L-20.9 -72.4L-20.8 -72.2L-20.8 -19L-20.4 -17.8L-19.9 -17.4L-19 -17L19 -17L19.9 -17.4L20.4 -17.9L20.8 -19L20.8 -72.2L20.9 -72.4L21.3 -72.4L21.3 -16.9L-21.3 -16.9ZM0.1 -67.4L1.8 -67.5L2.8 -67.1L3.8 -66.3L4.5 -64.7L4.5 -63.5L4.1 -62.4L3.7 -61.8L2.7 -60.9L2.7 -60.7L5.3 -60.1L7.1 -58.8L9.8 -48.7L10 -48.5L11.5 -48.5L11.7 -48.2L11.7 -47.3L11.5 -47.2L7.3 -47.2L3.3 -48.8L1.5 -48.8L1.4 -48.7L1.7 -47.5L1.5 -39.8L1.7 -39.3L1.7 -37.7L2 -37L2 -19.5L1.9 -19.1L1.3 -18.8L0.4 -18.9L0 -19.7L0 -36.7L0.5 -37.8L0.5 -47.8L0.8 -48.8L-1.2 -48.8L-4.8 -47.4L-5.2 -47.2L-9.3 -47.2L-9.5 -47.5L-9.4 -48.4L-8 -48.5L-7.7 -48.7L-4.9 -58.8L-4.4 -59.3L-3.1 -60.1L-0.6 -60.7L-0.6 -60.9L-1.7 -62L-2.1 -62.7L-2.3 -63.3L-2.3 -64.8L-1.5 -66.4L-0.9 -66.9ZM-3.4 -58.3L-3.7 -58L-6 -49.5L-6.1 -48.6L-4.7 -48.3L-1.2 -49.7L3.3 -49.7L6.7 -48.3L8.3 -48.6L7 -53.7L5.6 -58.3L5.3 -57.5L4.5 -52.3L4.8 -50.7L4.8 -50.2L-2.8 -50.2L-2.4 -52ZM-2.9 -47.6L-1.6 -47.6L-1.2 -47L-1.2 -43.7L-1.3 -43L-1.3 -38.5L-1.2 -37.8L-1.3 -36L-1.2 -34.8L-1.5 -34.5L-4.8 -34.5L-5 -34.7L-4.9 -35.8L-3.5 -35.8L-3.2 -36.2L-3.2 -47.2ZM3.6 -47.6L5 -47.7L5.3 -47.3L5.3 -26.3L5.5 -26.2L7.1 -26.1L7.2 -25L7 -24.8L3.7 -24.8L3.3 -25L3.3 -47ZM-14.6 -40.6L-13.8 -40.7L-13.1 -40.3L-12.6 -39.8L-12.3 -39.2L-12.3 -38.2L-12.6 -37.7L-13.1 -37.1L-13.7 -36.8L-14.7 -36.8L-15.1 -37.1L-15.7 -37.6L-16 -38.2L-16 -39.2L-15.8 -39.8L-15.3 -40.3ZM13.1 -40.4L14.6 -40.4L15.2 -40L15.6 -39.3L15.6 -38.1L15.2 -37.3L14.6 -36.9L13.1 -36.9L12.6 -37.2L12.1 -38.1L12.1 -39.3L12.5 -40Z',
+  c31a:'M-5.3 -62.6L-5.2 -62.3L-5.2 -55.9L4.2 -55.9L5.3 -55.7L7 -55.2L8.8 -54.4L10.2 -53.5L11.9 -51.7L12.8 -50.5L13.5 -49L13.9 -47.7L14.2 -46.3L14.2 -34.1L9.8 -38.4L9.7 -45.4L9.6 -46.4L9.3 -47.4L8.6 -48.6L7.1 -50.1L6 -50.7L3.8 -51.3L-3.2 -51.4L-9.7 -57.9L-9.6 -58.3ZM-13.1 -54.8L-5.2 -47L-5.3 -44.6L-14.2 -53.5L-14.1 -53.8ZM9.8 -32L13.8 -28L13.5 -28L12 -29.5L9.8 -27.4Z',
+  d5:'M7.1 -68.2L7.3 -68.1L6 -63.9L7.7 -63.3L9.4 -62.4L11.4 -61.2L12.7 -60.1L14.6 -58.3L16 -56.4L17.9 -53L18.7 -50.5L19.3 -47.7L19.5 -45.1L19.3 -44.7L19.3 -43L19 -41.4L16.2 -41.9L16.1 -42L16.4 -43.9L16.4 -46.8L16.1 -48.7L15.2 -51.6L14.1 -53.8L12.7 -55.7L11.2 -57.4L9.5 -58.8L8 -59.8L5.2 -61L4.8 -60.6L3.6 -56.8L-0.1 -64.8L-0.1 -65L0.2 -65.1ZM-6.6 -63.8L-6.2 -63.7L-5.4 -61.1L-8.1 -59.9L-10.7 -58.1L-13 -55.9L-13.9 -54.7L-14.6 -53.6L-15.9 -50.7L-16.5 -48.5L-16.8 -46.4L-16.8 -44L-16.4 -42.1L-15.9 -42L-12.4 -42.9L-12 -42.8L-16.5 -36.4L-17.3 -35.6L-22.9 -39.7L-23.8 -40.4L-19.9 -41.2L-19.5 -41.4L-19.5 -42L-19.7 -43.4L-19.7 -47.3L-19.3 -49.8L-18 -53.6L-16.3 -56.5L-14.7 -58.6L-12.5 -60.6L-9.5 -62.6ZM7.8 -36.4L16.7 -35.5L16.1 -28.2L15.9 -27.4L12.8 -30.6L11.2 -29.4L8.7 -27.8L7.1 -27.1L4.9 -26.4L2 -25.8L0.3 -25.8L-0.1 -25.7L-0.7 -25.8L-2.4 -25.8L-4.8 -26.3L-7.9 -27.3L-10.8 -28.8L-13.2 -30.7L-12.6 -31.5L-11.2 -33L-10.5 -32.4L-8.7 -31.1L-6.7 -30.1L-4.6 -29.4L-1.6 -28.8L1.4 -28.8L3.8 -29.2L7.3 -30.5L9 -31.5L10 -32.3L10.7 -32.9L10.6 -33.2Z'
+};
+/* PICTO-END */
 /* driehoekig bord met rode rand (gevaarsborden, B15, B17) */
 function warnPlate(inner){
   return '<polygon points="0,-84 36,-20 -36,-20" fill="#f4f4f1" stroke="#d3202a" stroke-width="10" stroke-linejoin="round"/>'+inner;
@@ -230,22 +253,13 @@ function ringPlate(fill,inner){
 }
 /* rode schuine balk (of kruis) over een rond bord; loopt door tot in de rode ring */
 function banBar(w,cross){return '<path d="M-18.4 -63.4L18.4 -26.6'+(cross?'M18.4 -63.4L-18.4 -26.6':'')+'" stroke="'+RED+'" stroke-width="'+w+'"/>';}
-/* rond blauw bord met witte rand (gebod, D) */
-function bluePlate(inner){return '<circle cx="0" cy="-45" r="31" fill="#1b6ec2" stroke="#fff" stroke-width="3"/>'+inner;}
+/* rond blauw bord met een dunne witte ring net binnen de rand (gebod, D) */
+function bluePlate(inner){return '<circle cx="0" cy="-45" r="32" fill="#1b6ec2"/><circle cx="0" cy="-45" r="29.2" fill="none" stroke="#fff" stroke-width="1.3"/>'+inner;}
 /* vierkant blauw bord met een witte lijn net binnen de rand (aanwijzing F, parking E9) */
 function squarePlate(h,inner){
   var y=-13-h;
   return '<rect x="-25" y="'+y+'" width="50" height="'+h+'" rx="5" fill="'+FBLUE+'" stroke="#fff" stroke-width="1.2"/>'+
     '<rect x="-21.5" y="'+(y+3.5)+'" width="43" height="'+(h-7)+'" rx="3" fill="none" stroke="#fff" stroke-width="1.6"/>'+inner;
-}
-/* stappende voetganger als silhouet (A21), voeten op (x,y) */
-function walker(x,y,k,col){
-  var l='stroke="'+col+'" fill="none" stroke-linecap="round" stroke-linejoin="round"';
-  return '<g transform="translate('+x+' '+y+') scale('+k+') translate(-10 -34)">'+
-    '<path d="M8 3.4Q10 .9 12 3.4V6.4Q10 8.8 8 6.4Z" fill="'+col+'"/>'+
-    '<path d="M7.6 9H12.4L13.2 19.4H6.8Z" fill="'+col+'" stroke="'+col+'" stroke-width="1" stroke-linejoin="round"/>'+
-    '<path d="M7.9 10L5.4 16.4L3.4 19.6" '+l+' stroke-width="2"/><path d="M12.1 10L14.4 16.2L16.6 18.8" '+l+' stroke-width="2"/>'+
-    '<path d="M8.8 19L6.6 26.2L3.6 33.2" '+l+' stroke-width="2.8"/><path d="M11.2 19L13.6 26.2L14.8 33.2H17.6" '+l+' stroke-width="2.8"/><path d="M3.6 33.2H5.6" '+l+' stroke-width="2.2"/></g>';
 }
 /* fiets in zijaanzicht (pictogram), midden op x,y */
 function bikeIcon(x,y,k,col,sw){
@@ -253,19 +267,10 @@ function bikeIcon(x,y,k,col,sw){
     '<circle cx="-10" cy="4" r="6"/><circle cx="10" cy="4" r="6"/><path d="M-10 4L-3 -7H7L10 4M-3 -7L0 4L7 -7M-6 -10H-1M7 -7L8 -11H12"/></g>';
 }
 /* D5 rotonde: drie witte pijlen in tegenwijzerzin */
-function roundArrows(){
-  var s='',i,r=15,cy=-45;
-  for(i=0;i<3;i++){
-    var a=(-60+i*120)*Math.PI/180,b=a-1.45,ax=r*Math.cos(a),ay=cy+r*Math.sin(a),bx=r*Math.cos(b),by=cy+r*Math.sin(b);
-    var tx=Math.sin(b),ty=-Math.cos(b),nx=Math.cos(b),ny=Math.sin(b);
-    s+='<path d="M'+ax.toFixed(1)+' '+ay.toFixed(1)+'A'+r+' '+r+' 0 0 0 '+bx.toFixed(1)+' '+by.toFixed(1)+'" stroke="#fff" stroke-width="5" fill="none"/>';
-    s+='<polygon points="'+(bx+tx*7).toFixed(1)+','+(by+ty*7).toFixed(1)+' '+(bx+nx*6).toFixed(1)+','+(by+ny*6).toFixed(1)+' '+(bx-nx*6).toFixed(1)+','+(by-ny*6).toFixed(1)+'" fill="#fff"/>';
-  }
-  return s;
-}
+function roundArrows(){return '<path fill="#fff" fill-rule="evenodd" d="'+PIC.d5+'"/>';}
 /* C31: afslaan verboden; de pijl spiegelt, de rode balk blijft van linksboven naar rechtsonder */
 function turnBan(right){
-  var arrow='<path d="M5 -27V-47A6 6 0 0 0 -1 -53H-8.5" stroke="'+INK+'" stroke-width="4.6" fill="none"/><polygon points="-17,-53 -8,-60.5 -8,-45.5" fill="'+INK+'"/>';
+  var arrow='<path fill="'+INK+'" d="'+PIC.c31a+'"/>';
   return ringPlate('#fff',(right?mirror(arrow):arrow)+banBar(5.4));
 }
 /* B15: de hoofdweg is een brede balk (bijna een vijfde van de bordbreedte) met een punt boven en een zwaluwstaart onder;
@@ -470,15 +475,10 @@ var TYPES={
     return signWrap(warnPlate('<path d="M-10.5 -52.5L10.5 -31.5M10.5 -52.5L-10.5 -31.5" stroke="'+INK+'" stroke-width="6.2" fill="none"/>'));
   }},
   a21:{label:'Oversteekplaats voetgangers (A21)',kind:'object',follow:true,w:80,h:150,draw:function(){
-    /* voetganger tussen twee onderbroken lijnen */
-    var z='',i;
-    for(i=-3;i<=2;i++)z+='<rect x="'+(i*7+1.1).toFixed(1)+'" y="-38.4" width="4.8" height="1.6" fill="'+INK+'"/>';
-    for(i=-3;i<=3;i++)z+='<rect x="'+(i*7-2.4).toFixed(1)+'" y="-28" width="4.8" height="1.6" fill="'+INK+'"/>';
-    return signWrap(warnPlate(z+walker(0,-28.6,.98,INK)));
+    return signWrap(warnPlate('<path fill="'+INK+'" fill-rule="evenodd" d="'+PIC.a21+'"/>'));
   }},
   a25:{label:'Oversteekplaats fietsers (A25)',kind:'object',follow:true,w:80,h:150,draw:function(){
-    /* fietser op een fijn getekende fiets */
-    return signWrap(warnPlate('<g transform="translate(0 -32.4) scale(.64)">'+bicycle(INK,1.4)+rider(INK)+'</g>'));
+    return signWrap(warnPlate('<path fill="'+INK+'" fill-rule="evenodd" d="'+PIC.a25+'"/>'));
   }},
   c3:{label:'Verboden toegang, beide richtingen (C3)',kind:'object',follow:true,w:68,h:150,draw:function(){return signWrap(ringPlate('#fff',''));}},
   c31a:{label:'Links afslaan verboden (C31a)',kind:'object',follow:true,w:68,h:150,draw:function(){return signWrap(turnBan(false));}},
@@ -510,27 +510,35 @@ var TYPES={
     return signWrap(squarePlate(54,'<path d="M0 -61.5L10.5 -49H3.2V-19.5H-3.2V-49H-10.5Z" fill="#fff"/>'));
   }},
   f49:{label:'Oversteekplaats voetgangers (F49)',kind:'object',follow:true,w:56,h:150,draw:function(){
-    /* grote witte driehoek met voetganger tussen twee onderbroken lijnen */
-    var z='',i;
-    for(i=-2;i<=2;i++)z+='<rect x="'+(i*5.6-1.6).toFixed(1)+'" y="-31.4" width="3.2" height="1.2" fill="'+INK+'"/>';
-    for(i=-3;i<=3;i++)z+='<rect x="'+(i*5.6-1.6).toFixed(1)+'" y="-23.6" width="3.2" height="1.2" fill="'+INK+'"/>';
-    return signWrap(squarePlate(54,'<polygon points="0,-62.5 21.5,-17.5 -21.5,-17.5" fill="#fff"/>'+z+walker(0,-23.2,.84,INK)));
+    /* vierkant bord: witte driehoek met voetganger tussen twee onderbroken lijnen */
+    return signWrap(squarePlate(50,'<path fill="#fff" fill-rule="evenodd" d="'+PIC.f49w+'"/><path fill="'+INK+'" fill-rule="evenodd" d="'+PIC.f49d+'"/>'));
   }},
-  yield:{label:'Voorrang verlenen (B1)',kind:'object',follow:true,w:68,h:150,draw:function(){
-    return signWrap('<polygon points="-26,-62 26,-62 0,-17" fill="#fff" stroke="'+RED+'" stroke-width="10" stroke-linejoin="round"/>');
+  a23:{label:'Opgelet kinderen (A23)',kind:'object',follow:true,w:80,h:150,draw:function(){return signWrap(warnPlate(kidsInner()));}},
+  f4a:{label:'Begin zone 30 (F4a)',kind:'object',follow:true,w:56,h:150,draw:function(){return signWrap(zonePlate(false));}},
+  f4b:{label:'Einde zone 30 (F4b)',kind:'object',follow:true,w:56,h:150,draw:function(){return signWrap(zonePlate(true));}},
+  school:{label:'Schoolomgeving (A23 + F4a)',kind:'object',follow:true,w:72,h:220,draw:function(){
+    /* A23 boven F4a aan één paal */
+    return '<g transform="translate(0 33)"><rect x="-3.5" y="-96" width="7" height="82" fill="#9aa1a6" stroke="#6c737a" stroke-width="1"/>'+
+      signWrap(zonePlate(false)+'<g transform="translate(0 -117) scale(.75) translate(0 52)">'+warnPlate(kidsInner())+'</g>')+'</g>';
+  }},
+  f111:{label:'Fietsstraat (F111)',kind:'object',follow:true,w:56,h:150,draw:function(){return signWrap(cyclePlate(false));}},
+  f113:{label:'Einde fietsstraat (F113)',kind:'object',follow:true,w:56,h:150,draw:function(){return signWrap(cyclePlate(true));}},
+  yield:{label:'Voorrang verlenen (B1)',kind:'object',follow:true,w:80,h:150,draw:function(){
+    /* even groot als een gevaarsbord, op zijn kop */
+    return signWrap('<polygon points="-36,-84 36,-84 0,-20" fill="#f4f4f1" stroke="'+RED+'" stroke-width="10" stroke-linejoin="round"/>');
   }},
   priority:{label:'Voorrangsweg (B9)',kind:'object',follow:true,w:68,h:150,draw:function(){
-    /* brede zwarte rand met afgeronde hoeken, oranje ruit met zwarte lijn */
-    return signWrap('<polygon points="0,-80 35,-45 0,-10 -35,-45" fill="#fff" stroke="'+INK+'" stroke-width="3.6" stroke-linejoin="round"/>'+
-      '<polygon points="0,-67.5 22.5,-45 0,-22.5 -22.5,-45" fill="'+ORANGE+'" stroke="'+INK+'" stroke-width="1.4"/>');
+    /* smalle zwarte rand met ruim afgeronde hoeken, oranje ruit met een dunne zwarte lijn */
+    return signWrap('<g transform="translate(0 -45) rotate(45)"><rect x="-25.4" y="-25.4" width="50.8" height="50.8" rx="4.6" fill="#fff" stroke="'+INK+'" stroke-width="1.9"/>'+
+      '<rect x="-16" y="-16" width="32" height="32" fill="'+ORANGE+'" stroke="'+INK+'" stroke-width="1.3"/></g>');
   }},
   endpriority:{label:'Einde voorrangsweg (B11)',kind:'object',follow:true,w:68,h:150,draw:function(){
     return signWrap('<defs><clipPath id="epc"><polygon points="600,70 1130,600 600,1130 70,600"/></clipPath></defs>'+
       '<g transform="translate(0,-45) scale(0.066) translate(-600,-600)">'+
-      '<polygon points="600,60 1140,600 600,1140 60,600" fill="#fff"/>'+
+      '<rect x="216" y="216" width="768" height="768" rx="70" transform="rotate(45 600 600)" fill="#fff"/>'+
       '<g clip-path="url(#epc)"><line x1="1400" y1="-200" x2="-200" y2="1400" stroke="#111" stroke-width="185"/></g>'+
       '<g fill="#e8801a" stroke="#111" stroke-width="24" stroke-linejoin="miter"><polygon points="270,600 600,270 710,380 380,710"/><polygon points="930,600 600,930 490,820 820,490"/></g>'+
-      '<polygon points="600,60 1140,600 600,1140 60,600" fill="none" stroke="#111" stroke-width="54" stroke-linejoin="round"/></g>');
+      '<rect x="216" y="216" width="768" height="768" rx="70" transform="rotate(45 600 600)" fill="none" stroke="#111" stroke-width="29"/></g>');
   }},
   noentry:{label:'Verboden richting (C1)',kind:'object',follow:true,w:68,h:150,draw:function(){
     /* witte balk over ruim 90% van de breedte */
@@ -549,15 +557,8 @@ var TYPES={
     for(i=0;i<n;i++)s+=laneArrow(L[i],x0+7+15+i*30);
     return signWrap(s);
   }},
-  workwarn:{label:'Werken (A31)',kind:'object',follow:true,w:72,h:150,draw:function(){
-    return signWrap('<g transform="translate(0,-18) scale(0.072) translate(-605,-1020)">'+
-      '<polygon points="610,70 75,975 1135,975" fill="#c0281f" stroke="#c0281f" stroke-width="95" stroke-linejoin="round"/>'+
-      '<polygon points="610,190 200,900 1020,900" fill="#f1f1ef"/>'+
-      '<g fill="#000"><rect x="258" y="838" width="675" height="30"/>'+
-      '<path d="M258 838L330 800Q372 755 410 800L470 838Z"/>'+
-      '<path d="M640 838Q720 750 800 700Q835 662 870 690Q910 760 933 838Z"/>'+
-      '<path d="M618 412Q650 392 684 428L680 462Q662 478 642 468L614 452Z M545 455L608 446L640 472L657 522L652 602L602 642L592 702L638 790L642 842L592 842L556 802L532 832L470 840L468 600L452 562L468 496L510 482Z"/></g>'+
-      '<path d="M652 664L772 722" stroke="#000" stroke-width="9" fill="none" stroke-linecap="round"/></g>');
+  workwarn:{label:'Werken (A31)',kind:'object',follow:true,w:80,h:150,draw:function(){
+    return signWrap(warnPlate('<path fill="'+INK+'" fill-rule="evenodd" d="'+PIC.a31+'"/>'));
   }},
   tree:{label:'Omgevallen boom',kind:'object',w:270,h:100,draw:function(){
     var s='',i,f=[[-112,-8,34],[-92,16,30],[-84,-26,28],[-62,2,30],[-120,22,24],[-70,-4,22]];
@@ -712,6 +713,29 @@ function baseDims(it){
   if(d.stretch)return [it.w||d.w,it.h||d.h];
   return [d.wf?d.wf(it):d.w,d.h];
 }
+/* F4a/F4b: wit zonebord met zwarte rand, "ZONE" en een C43-bord; einde = alles grijs met een zwarte schuine balk */
+function zonePlate(end){
+  var g='#8c9196',s='<rect x="-25" y="-87" width="50" height="74" rx="5" fill="#fff" stroke="#c9ccce" stroke-width=".8"/>'+
+    '<rect x="-22.4" y="-84.4" width="44.8" height="68.8" rx="3.4" fill="none" stroke="'+INK+'" stroke-width="1.7"/>'+
+    letters('ZONE',0,-76.6,5.6,6.8,1.2,1.4,end?g:INK);
+  if(end)return s+'<circle cx="0" cy="-47.8" r="20.4" fill="none" stroke="'+g+'" stroke-width=".7"/>'+letters('30',0,-47.8,10,12.1,1.7,2.5,g)+
+    '<path d="M20.2 -83.2L-20.2 -17.6" stroke="'+INK+'" stroke-width="3.2"/>';
+  return s+'<g transform="translate(0 -47.8) scale(.65) translate(0 45)">'+ringPlate('#fff',letters('30',0,-45,15.4,18.6,2.6,3.8,INK))+'</g>';
+}
+/* F111/F113: witte fietser in vooraanzicht voor een rode auto; einde = rode schuine balk */
+function cyclePlate(end){
+  var s=squarePlate(75,letters('Fietsstraat',0,-79.2,3.3,5.4,.55,.9,'#fff')+
+    '<path fill="'+RED+'" fill-rule="evenodd" d="'+PIC.f111r+'"/><path fill="#fff" fill-rule="evenodd" d="'+PIC.f111w+'"/>');
+  if(end)s+='<path d="M20.6 -83.4L-20.6 -17.6" stroke="'+RED+'" stroke-width="3.7"/>';
+  return s;
+}
+/* A23: de twee kinderen, nagetekend naar het officiële bord (omtrek in een meetvlak van 880×800, verkleind tot op het bord) */
+function kidsInner(){
+  return '<g transform="translate(-19.2 -60.37) scale(.043625)" fill="'+INK+'" fill-rule="evenodd">'+
+    '<path d="M513 35L531 40L562 50L590 60L599 70L604 80L605 90L603 100L599 110L595 120L589 130L582 140L575 150L570 160L571 170L574 180L575 190L581 200L596 210L607 220L615 230L623 240L631 250L638 260L643 270L648 280L654 290L659 300L663 310L667 320L669 330L671 340L671 350L685 355L702 360L707 370L711 380L714 390L715 400L718 410L719 420L719 440L717 450L715 460L707 470L690 474L660 477L636 480L636 490L643 500L645 510L646 520L645 530L639 540L627 550L615 560L620 570L626 580L631 590L635 600L639 610L644 620L648 630L655 640L663 650L671 660L680 670L688 680L691 690L683 700L671 710L663 720L655 730L647 740L647 744L593 744L593 740L603 730L616 720L620 710L624 700L632 690L636 680L630 670L624 660L617 650L612 640L604 630L596 620L588 610L580 600L569 590L561 580L552 570L545 560L532 550L524 540L521 537L519 540L511 550L491 560L487 570L484 580L482 590L479 600L475 610L471 620L467 630L464 640L462 650L459 660L455 670L453 680L450 690L447 700L443 710L443 720L445 730L443 740L443 744L347 744L340 738L336 730L340 720L384 710L394 700L401 690L405 680L412 670L414 660L416 650L420 640L421 630L424 620L426 610L428 600L432 590L432 580L436 570L437 560L440 550L440 540L436 530L436 520L440 510L444 500L448 490L452 480L456 470L459 460L463 450L465 440L468 430L472 420L472 400L470 390L468 380L461 370L456 364L451 370L443 380L435 390L425 400L417 410L405 420L393 430L380 436L366 436L358 428L364 410L368 400L372 390L378 380L384 370L392 360L399 350L406 340L413 330L419 320L424 310L429 300L433 290L437 280L441 270L445 260L452 250L460 240L468 230L476 220L485 210L496 200L498 190L491 180L481 170L483 160L482 150L476 140L476 130L480 120L480 110L482 100L484 90L480 80L476 70L476 60L481 50L496 40ZM595 314L604 320L609 330L613 340L616 348L612 352L585 352L583 340L583 330L587 320Z"/>'+
+    '<path d="M228 214L251 220L271 230L283 240L289 250L291 260L292 270L298 280L308 272L309 262L316 255L323 258L327 270L326 282L324 292L338 300L347 310L357 320L356 326L344 323L332 314L327 320L326 330L318 337L309 333L306 322L303 312L293 310L286 320L283 330L284 340L292 350L303 360L311 370L318 380L324 390L331 400L339 410L380 415L403 420L393 430L379 440L367 450L370 460L371 470L375 480L378 490L379 500L382 510L403 520L411 530L415 540L417 550L419 560L414 570L395 580L383 590L363 600L350 610L333 617L316 610L308 600L300 590L290 587L283 600L286 610L288 620L291 630L296 640L300 650L303 660L307 670L309 680L311 690L315 700L319 710L315 720L302 730L292 740L292 744L244 744L244 740L248 730L262 720L272 710L276 700L276 690L273 680L272 670L268 660L260 650L252 640L244 630L240 620L236 610L236 600L233 590L232 580L229 577L227 580L219 590L215 600L213 610L211 620L211 650L210 680L209 690L208 700L207 710L207 744L120 744L116 730L147 720L168 710L172 700L173 690L173 650L172 640L172 610L174 590L177 580L147 576L148 570L156 560L163 550L168 540L173 530L177 520L183 510L186 500L189 490L192 480L186 477L181 480L165 490L143 500L117 510L117 520L115 530L105 537L96 530L92 520L90 510L92 500L97 490L111 480L123 470L136 460L151 450L164 440L179 430L192 420L200 410L203 400L205 390L209 380L216 370L224 360L220 350L216 340L200 330L200 300L196 290L196 280L194 270L194 260L192 250L190 240L192 230L206 220ZM311 455L316 460L324 470L332 480L336 490L339 500L340 510L340 520L331 526L319 520L312 510L308 500L306 490L306 480L305 470L307 460Z"/>'+
+    '<rect x="24" y="743" width="832" height="24"/></g>';
+}
 function dims(it){var b=baseDims(it),s=TYPES[it.type].stretch?1:it.s;return [b[0]*s,b[1]*s];}
 
 var LINES=['solid','dashed','ydashed','tsolid','tdashed'];
@@ -719,20 +743,20 @@ var BERMS=['midberm','grasberm','verhardeberm','stoep','fietspad','parkeer'];
 var LANEMARKS=['stopline','sharks','arrow_s','arrow_r','arrow_l','arrow_sr','arrow_sl','arrow_mr','arrow_ml','bikesym'];
 /* alles op een paal (borden, lichten): die komen op de hoek rechts van de naderende bestuurder */
 var POSTS=['light','stop','yield','priority','endpriority','b15','b17',
-  'a21','a25','c3','c31a','c31b','c43','d5','d7','e1','e3','e9a','f19','f49','noentry','ahead','mergesign','mergesign_l','lanesign','workwarn'];
+  'a21','a25','c3','c31a','c31b','c43','d5','d7','e1','e3','e9a','f19','f49','a23','f4a','f4b','school','f111','f113','noentry','ahead','mergesign','mergesign_l','lanesign','workwarn'];
 
 var SECTIONS=[
   {el:'t-veh',entries:[{type:'car'},{type:'bus'},{type:'truck'},{type:'tram'},{type:'motor'},{type:'brom'},{type:'bike'},{type:'ambulance'},{type:'police'},{type:'fire'},{type:'ped'}]},
   /* één verkeerslicht; de kleur (rood, oranje, groen) kies je in het eigenschappenpaneel */
   {el:'t-light',entries:[{type:'light',state:'red',label:'Verkeerslicht'}]},
   /* verkeersborden per reeks, zoals de officiële indeling (A gevaar, B voorrang, C verbod, D gebod, F aanwijzing) */
-  {el:'t-sign-a',entries:[{type:'a21'},{type:'a25'},{type:'workwarn'}]},
+  {el:'t-sign-a',entries:[{type:'a21'},{type:'a23'},{type:'a25'},{type:'workwarn'}]},
   {el:'t-sign-b',entries:[{type:'yield'},{type:'stop'},{type:'priority'},{type:'endpriority'},{type:'b15'},   /* de zijweg kies je in het eigenschappenpaneel */{type:'b17'}]},
   {el:'t-sign-c',entries:[{type:'noentry'},{type:'c3'},{type:'c31a'},{type:'c31b'},
     {type:'c43',text:'50'}]},   /* de snelheid kies je in het eigenschappenpaneel */
   {el:'t-sign-d',entries:[{type:'ahead'},{type:'d5'},{type:'d7'}]},
   {el:'t-sign-e',entries:[{type:'e1'},{type:'e3'},{type:'e9a'}]},
-  {el:'t-sign-f',entries:[{type:'f19'},{type:'f49'},{type:'mergesign'},{type:'mergesign_l'},{type:'lanesign',lanes:['l','s','r']}]},
+  {el:'t-sign-f',entries:[{type:'f4a'},{type:'f4b'},{type:'school'},{type:'f111'},{type:'f113'},{type:'f19'},{type:'f49'},{type:'mergesign'},{type:'mergesign_l'},{type:'lanesign',lanes:['l','s','r']}]},
   {el:'t-mark',entries:[{type:'solid'},{type:'dashed'},{type:'ydashed'},{type:'stopline'},{type:'sharks'},{type:'zebra'},{type:'fietsoversteek'},{type:'vlak'},
     {type:'arrow_s'},{type:'arrow_r'},{type:'arrow_l'},{type:'arrow_sr'},{type:'arrow_sl'},{type:'arrow_mr'},{type:'arrow_ml'},
     {type:'bikesym'},{type:'opstelvak'},{type:'zigzag'},{type:'tramrails'}]},

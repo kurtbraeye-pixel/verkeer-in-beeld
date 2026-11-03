@@ -163,6 +163,7 @@
         </g>
         <g id="items"></g>
         <g id="sel"></g>
+        <g id="ink"></g>
       </svg>
       </div>
       <div class="hint" id="hint">Klik op iets in de lijst, of sleep het naar het tekenvlak.</div>
@@ -171,6 +172,12 @@
         <span id="pLabel"></span>
         <button class="btn ghost icon" id="pNext" type="button" title="Volgend voorbeeld (→)" aria-label="Volgend voorbeeld"><svg class="ic"><use href="#i-right"/></svg></button>
         <div class="grp" id="pPlayGrp" hidden><button class="btn primary" id="pPlay" type="button" title="Alle voertuigen na elkaar laten vertrekken"><svg class="ic"><use href="#i-play"/></svg><span>Afspelen</span></button><button class="btn" id="pStep" type="button" title="Volgende stap (spatie in de presentatie)"><svg class="ic"><use href="#i-step"/></svg><span>Stap 1</span></button><button class="btn ghost icon" id="pReset" type="button" title="Terug naar het begin" aria-label="Terug naar het begin"><svg class="ic"><use href="#i-rotl"/></svg></button></div>
+        <div class="grp inkgrp" id="pInk">
+          <button class="btn ghost icon" id="pPen" type="button" title="Pen: schrijven en aanduiden op het bord (P)" aria-label="Pen" aria-pressed="false"><svg class="ic"><use href="#i-pencil"/></svg></button>
+          <span class="inkcols" id="pInkCols" hidden><button type="button" data-ink="#e3262e" title="Rood" aria-label="Rood"></button><button type="button" data-ink="#ffcc00" title="Geel" aria-label="Geel"></button><button type="button" data-ink="#1b6ec2" title="Blauw" aria-label="Blauw"></button><button type="button" data-ink="#2e9a57" title="Groen" aria-label="Groen"></button></span>
+          <button class="btn ghost icon" id="pInkUndo" type="button" title="Laatste lijn wissen (Ctrl+Z)" aria-label="Laatste lijn wissen" hidden><svg class="ic"><use href="#i-undo"/></svg></button>
+          <button class="btn ghost icon" id="pInkClear" type="button" title="Alles wissen wat je schreef" aria-label="Alles wissen wat je schreef" hidden><svg class="ic"><use href="#i-eraser"/></svg></button>
+        </div>
         <button class="btn ghost" id="pExit" type="button" title="Presentatie stoppen (Esc)"><svg class="ic"><use href="#i-x"/></svg><span>Stoppen</span></button>
       </div>
     </div>
