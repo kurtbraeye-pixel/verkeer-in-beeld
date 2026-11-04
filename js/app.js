@@ -6,14 +6,14 @@ import {
 } from './types.js';
 import {PRESETS,XPRESETS,RPRESETS} from './presets.js';
 
-function renderTiles(){SECTIONS.forEach(fillTiles);}
+function renderTiles(){SECTIONS.forEach(fillTiles);if(document.getElementById('palQ').value)palSearch();}
 
 var svg=document.getElementById('scene'),layer=document.getElementById('items'),selLayer=document.getElementById('sel');
 var store={cross:{items:[],vw:240,hw:240,arm:null},road:{items:[],roadW:280,orient:'v'},round:{items:[],R:250,bike:''}},scene='cross';
 var items=store.cross.items,roadS=store.road;
 var selId=null,uid=0,undoStack=[],redoStack=[],dir='bottom',curColor=COLORS[0],drag=null;
 var KEY='kruispunt-bouwer-v2';
-var APP_VERSION='v33';   /* moet gelijk zijn aan VERSION in sw.js; anders verschijnt de melding "nieuwe versie" */
+var APP_VERSION='v34';   /* moet gelijk zijn aan VERSION in sw.js; anders verschijnt de melding "nieuwe versie" */
 var ARMS=['top','bottom','left','right'];
 
 /* Zet bewaarde gegevens (localStorage of een geopend bestand) om naar de toestand van de app.
@@ -86,6 +86,32 @@ function renderSwatches(){
   }).join('');
 }
 function renderPalette(){renderTiles();renderDpad();renderSwatches();}
+/* zoeken in het materiaal: toont alleen de passende tegels en klapt hun groepen open; leeg = alles zoals voordien */
+var ALIAS={agent_up:'politie agent bevoegd persoon',agent_side:'politie agent bevoegd persoon',light:'licht driekleurig',
+  yield:'haaientanden driehoek voorrang',stop:'stoppen',priority:'voorrang',endpriority:'voorrang',b15:'voorrang',b17:'voorrang rechts',
+  zebra:'oversteekplaats voetgangers',ped:'persoon wandelaar',bike:'fietser',tree:'boom',carD:'pech',truckD:'pech',tag:'letter',routepijl:'pijl route',
+  f4a:'snelheid 30',f4b:'snelheid 30',school:'kinderen zone 30',a23:'school',f111:'fiets',f113:'fiets',c43:'snelheid',asfalt:'zijstraat'};
+function norm(t){return String(t).toLowerCase().replace(/\u00AD/g,'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+var palOpen=null;
+function palSearch(){
+  var q=norm(document.getElementById('palQ').value.trim()),pal=document.getElementById('palette'),secs=pal.querySelectorAll('details.sec'),any=false;
+  if(q&&!palOpen){palOpen=[];secs.forEach(function(d){palOpen.push(d.open);});}
+  pal.classList.toggle('searching',!!q);
+  pal.querySelectorAll('.tile').forEach(function(t){
+    var e=ENTRY[t.getAttribute('data-key')],hay=norm(t.textContent+' '+e.type+' '+(ALIAS[e.type]||''));
+    var ok=!q||q.split(/\s+/).every(function(w){return hay.indexOf(w)>-1;});
+    t.hidden=!ok;if(ok&&q)any=true;
+  });
+  /* van binnen naar buiten: een groep is zichtbaar als er een zichtbare tegel in zit */
+  Array.prototype.slice.call(secs).reverse().forEach(function(d){
+    var vis=!q||!!d.querySelector('.tile:not([hidden])');
+    d.hidden=!vis;if(q&&vis)d.open=true;
+  });
+  if(!q&&palOpen){secs.forEach(function(d,i){d.open=palOpen[i];});palOpen=null;}
+  document.getElementById('palNone').hidden=!q||any;
+}
+document.getElementById('palQ').addEventListener('input',palSearch);
+document.getElementById('palQ').addEventListener('keydown',function(e){if(e.key==='Escape'){this.value='';palSearch();this.blur();}});
 
 document.getElementById('dpad').addEventListener('click',function(e){
   var b=e.target.closest('[data-dir]');if(!b||b.disabled)return;
@@ -328,15 +354,24 @@ function itemLabel(it){return (it.type==='agent_up'||it.type==='agent_side')?'Be
 function insField(label,inner,out){
   return '<div class="ins-field"><div class="ins-lab"><span>'+label+'</span>'+(out?'<output data-o="'+out+'"></output>':'')+'</div>'+inner+'</div>';
 }
+/* het zwevende venster gaat naar links als het over het gekozen onderdeel zou liggen */
+function insPlace(it){
+  var ins=document.getElementById('inspector'),g=layer.querySelector('[data-id="'+it.id+'"]');
+  if(!g||getComputedStyle(ins).position!=='absolute'){ins.classList.remove('left');return;}
+  ins.classList.remove('left');
+  var a=ins.getBoundingClientRect(),b=g.getBoundingClientRect();
+  if(b.right>a.left&&b.left<a.right&&b.bottom>a.top&&b.top<a.bottom)ins.classList.add('left');
+}
 function renderInspector(it){
   var body=document.getElementById('insBody'),empty=document.getElementById('insEmpty');
   document.getElementById('inspector').classList.toggle('has-sel',!!it);
+  if(it)requestAnimationFrame(function(){if(sel()===it)insPlace(it);});
   if(!it){body.hidden=true;empty.hidden=false;insKey='';return;}
   var d=TYPES[it.type];
   var key=[it.id,it.type,(it.lanes||[]).join(''),d.color?it.color:'',it.state||'',it.beacon===false,!!it.solid,!!it.dash,it.blink||'',!!it.brake,it.side||'',it.order||'',it.route||'',scene].join('|');
   if(key===insKey){syncInspector(it);return;}
   insKey=key;empty.hidden=true;body.hidden=false;
-  var h='<h2>'+escHtml(itemLabel(it))+'</h2>';
+  var h='<div class="ins-head"><h2>'+escHtml(itemLabel(it))+'</h2><button class="btn ghost icon" type="button" data-act="close" title="Sluiten (Esc)" aria-label="Sluiten">'+IC('x')+'</button></div>';
   if(d.stretch){
     if(d.stretch.indexOf('w')>-1)h+=insField('Breedte','<input type="range" data-k="w" min="20" max="1400" step="5" aria-label="Breedte">','w');
     if(d.stretch.indexOf('h')>-1)h+=insField('Lengte','<input type="range" data-k="h" min="20" max="1600" step="5" aria-label="Lengte">','h');
@@ -437,6 +472,7 @@ function syncInspector(it){
       mutate(function(){it.lanes=(it.lanes||['s','s']).slice();it.lanes[i]=LANECYC[(LANECYC.indexOf(it.lanes[i])+1)%LANECYC.length];});return;
     }
     var act=b.getAttribute('data-act');
+    if(act==='close'){selId=null;render();return;}
     if(act==='rotl')mutate(function(){it.rot=((it.rot-90)%360+360)%360;});
     else if(act==='rotr')mutate(function(){it.rot=(it.rot+90)%360;});
     else if(act==='laneadd')mutate(function(){it.lanes=(it.lanes||['s','s']).concat('s');});
@@ -1206,10 +1242,9 @@ document.getElementById('bAbout').onclick=function(){
    Na een nieuwe versie met NEWS verschijnt het altijd één keer, met de vernieuwingen bij de juiste stap.
    Bij een nieuwe versie: NEWS.id aanpassen en de items vervangen (step = 1, 2 of 3). */
 var WELCOME_OFF='verkeer-welkom-uit',NEWS_SEEN='verkeer-nieuws-gezien';
-var NEWS={id:'v33',items:[
-  {step:1,t:'Nieuw voorbeeld op de rechte weg: "Fietsstraat: auto achter een fietser".'},
-  {step:2,t:'Nieuwe borden: zone 30 (begin en einde), schoolomgeving, opgelet kinderen (A23) en fietsstraat (begin en einde). Verschillende borden zijn opnieuw nagetekend zodat ze nog beter op de officiële lijken (onder meer A21, A25, werken, F49, voorrangsweg, rotonde en afslaan verboden).'},
-  {step:3,t:'Presenteren heeft nu een pen: schrijf en duid aan op het digibord in rood, geel, blauw of groen. De tekening zelf verandert niet; wat je schreef verdwijnt bij een ander voorbeeld of als je stopt.'}
+var NEWS={id:'v34',items:[
+  {step:2,t:'Zoek in het materiaal: typ bv. "stop", "fiets" of "zebra" bovenaan de lijst. De tegels zijn groter en duidelijker.'},
+  {step:2,t:'Meer plaats om te tekenen: de eigenschappen verschijnen nu in een zwevend venster zodra je iets aanklikt, en schuiven opzij als ze het onderdeel zouden bedekken. Sluiten met het kruisje of Esc.'}
 ]};
 function welcomeOff(){try{return localStorage.getItem(WELCOME_OFF)==='1';}catch(e){return false;}}
 function newsUnseen(){try{return localStorage.getItem(NEWS_SEEN)!==NEWS.id;}catch(e){return false;}}

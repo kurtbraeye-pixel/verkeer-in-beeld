@@ -37,6 +37,7 @@
   <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
   <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
   <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
   <symbol id="i-grid" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></symbol>
@@ -63,6 +64,8 @@
 
 <main>
   <aside class="palette" id="palette" aria-label="Materiaal">
+    <div class="palsearch"><svg class="ic"><use href="#i-search"/></svg><input type="search" id="palQ" placeholder="Zoeken, bv. stop, fiets, zebra" aria-label="Zoek in het materiaal" autocomplete="off"></div>
+    <p class="palnone" id="palNone" hidden>Niets gevonden. Probeer een ander woord.</p>
     <div class="ctrls">
       <div><div class="mini">Komt van</div><div class="dpad" id="dpad"></div></div>
       <div><div class="mini">Kleur</div><div class="sw" id="sw"></div></div>
@@ -185,15 +188,7 @@
 
   <!-- eigenschappen van het gekozen onderdeel -->
   <aside class="inspector" id="inspector" aria-label="Eigenschappen">
-    <div class="ins-empty" id="insEmpty">
-      <h2>Eigenschappen</h2>
-      <p>Klik op een onderdeel in de tekening om het hier aan te passen.</p>
-      <ul class="ins-tips">
-        <li><span class="dot"></span>Sleep een onderdeel om het te verplaatsen.</li>
-        <li><span class="dot"></span>De oranje bolletjes draaien of vergroten het.</li>
-        <li><span class="dot"></span>Nieuwe onderdelen kies je links in het materiaal.</li>
-      </ul>
-    </div>
+    <div class="ins-empty" id="insEmpty" hidden></div>
     <div class="ins-body" id="insBody" hidden></div>
   </aside>
 </main>
