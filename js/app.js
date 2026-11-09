@@ -13,7 +13,7 @@ var store={cross:{items:[],vw:240,hw:240,arm:null},road:{items:[],roadW:280,orie
 var items=store.cross.items,roadS=store.road;
 var selId=null,uid=0,undoStack=[],redoStack=[],dir='bottom',curColor=COLORS[0],drag=null;
 var KEY='kruispunt-bouwer-v2';
-var APP_VERSION='v34';   /* moet gelijk zijn aan VERSION in sw.js; anders verschijnt de melding "nieuwe versie" */
+var APP_VERSION='v35';   /* moet gelijk zijn aan VERSION in sw.js; anders verschijnt de melding "nieuwe versie" */
 var ARMS=['top','bottom','left','right'];
 
 /* Zet bewaarde gegevens (localStorage of een geopend bestand) om naar de toestand van de app.
@@ -90,7 +90,7 @@ function renderPalette(){renderTiles();renderDpad();renderSwatches();}
 var ALIAS={agent_up:'politie agent bevoegd persoon',agent_side:'politie agent bevoegd persoon',light:'licht driekleurig',
   yield:'haaientanden driehoek voorrang',stop:'stoppen',priority:'voorrang',endpriority:'voorrang',b15:'voorrang',b17:'voorrang rechts',
   zebra:'oversteekplaats voetgangers',ped:'persoon wandelaar',bike:'fietser',tree:'boom',carD:'pech',truckD:'pech',tag:'letter',routepijl:'pijl route',
-  f4a:'snelheid 30',f4b:'snelheid 30',school:'kinderen zone 30',a23:'school',f111:'fiets',f113:'fiets',c43:'snelheid',asfalt:'zijstraat'};
+  f4a:'snelheid 30',f4b:'snelheid 30',school:'kinderen zone 30',a23:'school',f111:'fiets',f113:'fiets',f12a:'woonerf erf spelen',f12b:'woonerf erf einde',f99a:'voorbehouden weg fiets voetganger ruiter speed pedelec',f99b:'voorbehouden weg fiets voetganger',f99c:'voorbehouden weg tractor landbouw',f101a:'voorbehouden weg einde',f101b:'voorbehouden weg einde',f101c:'voorbehouden weg einde',f103:'voetgangerszone winkelstraat',f105:'voetgangerszone einde',speelstraat:'spelen kinderen c3',schoolstraat:'school kinderen c3',c43:'snelheid',asfalt:'zijstraat'};
 function norm(t){return String(t).toLowerCase().replace(/\u00AD/g,'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
 var palOpen=null;
 function palSearch(){
@@ -1242,9 +1242,8 @@ document.getElementById('bAbout').onclick=function(){
    Na een nieuwe versie met NEWS verschijnt het altijd één keer, met de vernieuwingen bij de juiste stap.
    Bij een nieuwe versie: NEWS.id aanpassen en de items vervangen (step = 1, 2 of 3). */
 var WELCOME_OFF='verkeer-welkom-uit',NEWS_SEEN='verkeer-nieuws-gezien';
-var NEWS={id:'v34',items:[
-  {step:2,t:'Zoek in het materiaal: typ bv. "stop", "fiets" of "zebra" bovenaan de lijst. De tegels zijn groter en duidelijker.'},
-  {step:2,t:'Meer plaats om te tekenen: de eigenschappen verschijnen nu in een zwevend venster zodra je iets aanklikt, en schuiven opzij als ze het onderdeel zouden bedekken. Sluiten met het kruisje of Esc.'}
+var NEWS={id:'v35',items:[
+  {step:2,t:'Nieuwe borden: woonerf (F12a en F12b), voorbehouden weg (F99 en F101), voetgangerszone (F103 en F105), speelstraat en schoolstraat. Je vindt ze bij de aanwijzingsborden of via het zoekveld.'}
 ]};
 function welcomeOff(){try{return localStorage.getItem(WELCOME_OFF)==='1';}catch(e){return false;}}
 function newsUnseen(){try{return localStorage.getItem(NEWS_SEEN)!==NEWS.id;}catch(e){return false;}}
