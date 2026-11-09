@@ -13,7 +13,7 @@ var store={cross:{items:[],vw:240,hw:240,arm:null},road:{items:[],roadW:280,orie
 var items=store.cross.items,roadS=store.road;
 var selId=null,uid=0,undoStack=[],redoStack=[],dir='bottom',curColor=COLORS[0],drag=null;
 var KEY='kruispunt-bouwer-v2';
-var APP_VERSION='v35';   /* moet gelijk zijn aan VERSION in sw.js; anders verschijnt de melding "nieuwe versie" */
+var APP_VERSION='v36';   /* moet gelijk zijn aan VERSION in sw.js; anders verschijnt de melding "nieuwe versie" */
 var ARMS=['top','bottom','left','right'];
 
 /* Zet bewaarde gegevens (localStorage of een geopend bestand) om naar de toestand van de app.
@@ -90,7 +90,7 @@ function renderPalette(){renderTiles();renderDpad();renderSwatches();}
 var ALIAS={agent_up:'politie agent bevoegd persoon',agent_side:'politie agent bevoegd persoon',light:'licht driekleurig',
   yield:'haaientanden driehoek voorrang',stop:'stoppen',priority:'voorrang',endpriority:'voorrang',b15:'voorrang',b17:'voorrang rechts',
   zebra:'oversteekplaats voetgangers',ped:'persoon wandelaar',bike:'fietser',tree:'boom',carD:'pech',truckD:'pech',tag:'letter',routepijl:'pijl route',
-  f4a:'snelheid 30',f4b:'snelheid 30',school:'kinderen zone 30',a23:'school',f111:'fiets',f113:'fiets',f12a:'woonerf erf spelen',f12b:'woonerf erf einde',f99a:'voorbehouden weg fiets voetganger ruiter speed pedelec',f99b:'voorbehouden weg fiets voetganger',f99c:'voorbehouden weg tractor landbouw',f101a:'voorbehouden weg einde',f101b:'voorbehouden weg einde',f101c:'voorbehouden weg einde',f103:'voetgangerszone winkelstraat',f105:'voetgangerszone einde',speelstraat:'spelen kinderen c3',schoolstraat:'school kinderen c3',c43:'snelheid',asfalt:'zijstraat'};
+  f4a:'snelheid 30',f4b:'snelheid 30',school:'kinderen zone 30',a23:'school',f111:'fiets',f113:'fiets',f12a:'woonerf erf spelen',f12b:'woonerf erf einde',f99a:'voorbehouden weg fiets voetganger ruiter speed pedelec',f99b:'voorbehouden weg fiets voetganger',f99c:'voorbehouden weg tractor landbouw',f101a:'voorbehouden weg einde',f101b:'voorbehouden weg einde',f101c:'voorbehouden weg einde',f103:'voetgangerszone winkelstraat',f105:'voetgangerszone einde',speelstraat:'spelen kinderen c3',schoolstraat:'school kinderen c3',ruiter:'paard',f50:'fiets oversteekplaats',f111mark:'fietszone logo markering',c43:'snelheid',asfalt:'zijstraat'};
 function norm(t){return String(t).toLowerCase().replace(/\u00AD/g,'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
 var palOpen=null;
 function palSearch(){
@@ -392,7 +392,7 @@ function renderInspector(it){
     h+=insField('Afspelen: vertrekt als','<div class="seg">'+[0,1,2,3,4,5].map(function(n){
       return '<button type="button" data-order="'+n+'"'+((it.order||0)===n?' class="on"':'')+'>'+(n?n+'e':'–')+'</button>';}).join('')+'</div>');
     var RT=scene==='cross'?[['l','Links af'],['s','Rechtdoor'],['r','Rechts af']]:scene==='round'?[['r','1e afrit'],['s','2e afrit'],['l','3e afrit'],['u','Keren']]:
-      [['s','Rechtdoor'],['ml','Strook links'],['mr','Strook rechts'],['o','Hindernis voorbij'],['p','Stilstaan']].concat(countOf(['asfalt'])?[['l','Links af'],['r','Rechts af']]:[]);
+      [['s','Rechtdoor'],['ml','Strook links'],['mr','Strook rechts'],['o','Hindernis voorbij'],['k','Kruisen'],['p','Stilstaan']].concat(countOf(['asfalt'])?[['l','Links af'],['r','Rechts af']]:[]);
     if(it.order&&RT&&it.type!=='ped')h+=insField('Rijdt','<div class="seg'+(RT.length>4?' wrap':'')+'">'+RT.map(function(o){
       return '<button type="button" data-route="'+o[0]+'"'+((it.route||'s')===o[0]?' class="on"':'')+'>'+o[1]+'</button>';}).join('')+'</div>');
   }
@@ -943,11 +943,11 @@ document.getElementById('pNext').onclick=function(){presStep(1);};
 /* ---------- afspelen: voertuigen vertrekken stap voor stap in de ingestelde volgorde ---------- */
 /* it.order = 1, 2, 3 … (gelijke nummers rijden samen); it.route = s rechtdoor, l links, r rechts, u keren (rotonde) */
 var play=null,playRaf=0;
-var PLAYSPEED={ped:80,bike:170,brom:210,tram:220};
+var PLAYSPEED={ped:80,ruiter:110,bike:170,brom:210,tram:220};
 function movers(){return items.filter(function(o){return o.order;});}
 function playGroups(){
-  var nums=[];movers().forEach(function(o){if(nums.indexOf(o.order)<0)nums.push(o.order);});
-  return nums.sort(function(a,b){return a-b;}).map(function(n){return items.filter(function(o){return o.order===n;}).map(function(o){return o.id;});});
+  var nums=[];movers().forEach(function(o){[o.order,o.order2].forEach(function(n){if(n&&nums.indexOf(n)<0)nums.push(n);});});
+  return nums.sort(function(a,b){return a-b;}).map(function(n){var g=items.filter(function(o){return o.order===n||o.order2===n;}).map(function(o){return o.id;});g.n=n;return g;});
 }
 /* route als lijst punten in het tekenvlak, tot buiten beeld */
 function routePts(it){
@@ -959,7 +959,7 @@ function routePts(it){
   /* een voetganger steekt over en blijft dan staan */
   if(it.type==='ped')return [[it.x,it.y],[it.x+f[0]*300,it.y+f[1]*300]];
   if(scene==='road'&&(route==='l'||route==='r')){var tr=roadTurn(it,route,f,r);if(tr)return clipPts(tr);}
-  if(scene==='road'&&['ml','mr','o','p'].indexOf(route)>-1)return clipPts(roadMove(it,route,f,r));
+  if(scene==='road'&&['ml','mr','o','p','k'].indexOf(route)>-1)return clipPts(roadMove(it,route,f,r));
   if(scene==='round'){
     var R=store.round.R,Rl=(Math.round(R*.48)+22+R)/2,dx=it.x-CX,dy=it.y-CY,phi,dist=Math.hypot(dx,dy);
     /* wie al op de ring rijdt (ook een fietser op het fietspad van de rotonde), blijft op zijn eigen afstand van het midden */
@@ -1038,6 +1038,8 @@ function roadMove(it,route,f,r){
     pos=pts[pts.length-1];bl.push([len-60,len+Math.hypot(d,dx)*.8,dx<0?'l':'r']);len+=Math.hypot(d,dx);lat+=dx;
   }
   if(route==='ml'||route==='mr'){straight(120);curve(220,route==='ml'?-LANE:LANE);straight(1500);}
+  /* kruisen op een smalle weg: even naar rechts uitwijken en terug naar het midden, zonder richtingaanwijzer */
+  else if(route==='k'){straight(10);curve(120,62);straight(90);curve(120,-62);straight(1500);bl=[];}
   else if(route==='p'){
     /* tot tegen de rechterkant van de weg en daar blijven staan */
     var X0=(it.x-CX)*r[0]+(it.y-CY)*r[1],dx=Math.max(10,roadS.roadW/2-X0-TYPES[it.type].w/2-8);
@@ -1076,7 +1078,7 @@ function prepRoute(it){
   for(var i=1;i<p.length;i++)L.push(L[i-1]+Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]));
   end=L[L.length-1];
   /* bl = lijst [van, tot, richting]: wanneer de richtingaanwijzer knippert (afstand langs de route) */
-  var m={p:p,L:L,d:0,v:PLAYSPEED[it.type]||280,bl:[]};
+  var m={p:p,L:L,d:0,v:it.pace||PLAYSPEED[it.type]||280,bl:[]};
   if(routeExit){
     /* rotonde: niet knipperen bij het oprijden, wel rechts vlak voor de uitrit */
     for(i=0;i<p.length;i++)if(p[i]===routeExit)m.bl.push([Math.max(0,L[i]-120),L[i]+90,'r']);
@@ -1085,7 +1087,7 @@ function prepRoute(it){
   return m;
 }
 function routeAt(m){
-  var p=m.p,L=m.L,d=Math.min(m.d,L[L.length-1]),i=1;
+  var p=m.p,L=m.L,d=Math.min(m.d,m.stop||L[L.length-1],L[L.length-1]),i=1;
   while(i<L.length-1&&L[i]<d)i++;
   var a=p[i-1],b=p[i],seg=(L[i]-L[i-1])||1,t=(d-L[i-1])/seg;
   return {x:a[0]+(b[0]-a[0])*t,y:a[1]+(b[1]-a[1])*t,rot:(Math.atan2(b[0]-a[0],-(b[1]-a[1]))*180/Math.PI+360)%360};
@@ -1095,7 +1097,12 @@ function playStep(auto){
   if(!play){var gr=playGroups();if(!gr.length)return;play={groups:gr,gi:0,ov:{},moving:null,auto:false,tags:tagLinks()};selId=null;}
   if(play.gi>=play.groups.length){if(!auto)return;stopPlay();playStep(true);return;}
   play.auto=!!auto;
-  var mv={};play.groups[play.gi].forEach(function(id){var it=find(id);if(it)mv[id]=prepRoute(it);});
+  var mv={},stepN=play.groups[play.gi].n;
+  play.groups[play.gi].forEach(function(id){
+    var it=find(id);if(!it)return;mv[id]=prepRoute(it);
+    /* wie onderweg stopt (hold), rijdt in zijn tweede stap (order2) vanaf daar verder */
+    if(it.hold){if(it.order2===stepN)mv[id].d=mv[id].from=it.hold;else mv[id].stop=it.hold;}
+  });
   /* wie in dezelfde stap recht achter een trager voertuig rijdt (zelfde richting, zelfde strook), blijft erachter */
   play.groups[play.gi].forEach(function(id){
     var b=find(id);if(!b||!mv[id])return;
@@ -1114,7 +1121,10 @@ function playTick(ts){
   playRaf=0;if(!play||!play.moving)return;
   var dt=play.last?Math.min(.05,(ts-play.last)/1000):0,busy=false;play.last=ts;
   Object.keys(play.moving).forEach(function(id){
-    var m=play.moving[id];m.d+=m.v*dt;
+    var m=play.moving[id],ease=1;
+    if(m.stop)ease=Math.max(.22,Math.min(1,(m.stop-m.d)/90));   /* remt af tot de stopplaats */
+    else if(m.from)ease=Math.min(1,.25+(m.d-m.from)/110);   /* trekt rustig op */
+    m.d+=m.v*dt*ease;
     var pos=routeAt(m),it=find(+id);
     var bk=m.bl.filter(function(b){return m.d>=b[0]&&m.d<b[1];})[0];
     play.ov[id]={x:pos.x,y:pos.y,rot:pos.rot,blink:bk?bk[2]:(it&&it.blink)};
@@ -1123,7 +1133,7 @@ function playTick(ts){
       var a=(pos.rot-it.rot)*Math.PI/180,ox=tg.x-it.x,oy=tg.y-it.y;
       play.ov[tg.id]={x:pos.x+ox*Math.cos(a)-oy*Math.sin(a),y:pos.y+ox*Math.sin(a)+oy*Math.cos(a)};
     });
-    if(m.d<m.L[m.L.length-1])busy=true;
+    if(m.d<Math.min(m.stop||Infinity,m.L[m.L.length-1]))busy=true;
   });
   renderPlay();
   if(busy){playRaf=requestAnimationFrame(playTick);return;}
@@ -1242,8 +1252,9 @@ document.getElementById('bAbout').onclick=function(){
    Na een nieuwe versie met NEWS verschijnt het altijd één keer, met de vernieuwingen bij de juiste stap.
    Bij een nieuwe versie: NEWS.id aanpassen en de items vervangen (step = 1, 2 of 3). */
 var WELCOME_OFF='verkeer-welkom-uit',NEWS_SEEN='verkeer-nieuws-gezien';
-var NEWS={id:'v35',items:[
-  {step:2,t:'Nieuwe borden: woonerf (F12a en F12b), voorbehouden weg (F99 en F101), voetgangerszone (F103 en F105), speelstraat en schoolstraat. Je vindt ze bij de aanwijzingsborden of via het zoekveld.'}
+var NEWS={id:'v36',items:[
+  {step:1,t:'Negen nieuwe voorbeelden: fietsstraat met inhalende fietser, woonerf, voetgangerszone, voorbehouden weg, weg met middenrijbaan, zebrapad, oversteekplaats voor fietsers, speelstraat en schoolstraat.'},
+  {step:2,t:'Nieuw in het materiaal: de ruiter, het bord oversteekplaats fietsers (F50) en het logo van de fietsstraat om op de weg te leggen.'}
 ]};
 function welcomeOff(){try{return localStorage.getItem(WELCOME_OFF)==='1';}catch(e){return false;}}
 function newsUnseen(){try{return localStorage.getItem(NEWS_SEEN)!==NEWS.id;}catch(e){return false;}}

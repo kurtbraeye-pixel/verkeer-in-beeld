@@ -12,6 +12,7 @@ function I(type,x,y,o){
   if(o.text)it.text=o.text;
   if(o.state)it.state=o.state;
   if(o.nopost)it.nopost=true;
+  if(o.pace)it.pace=o.pace;
   if(d.stretch){it.w=o.w||d.w;it.h=o.h||d.h;}
   if(type==='vlak')it.pts=copyPts(o.pts||SHAPES[2]);
   if(type==='routepijl')it.pts=copyPts(o.pts||ROUTES[o.shape==null?1:o.shape]);
@@ -19,8 +20,10 @@ function I(type,x,y,o){
 }
 function edgeLines(a,b){return [I('solid',a,430,{h:860}),I('solid',b,430,{h:860})];}
 /* volgorde bij afspelen (n = 1, 2 …) en rijrichting: s rechtdoor, l/r afslaan, ml/mr van rijstrook wisselen,
-   o hindernis voorbijrijden, p aan de kant stilstaan (rechte weg), u keren (rotonde) */
+   o hindernis voorbijrijden, p aan de kant stilstaan, k kruisen (rechte weg), u keren (rotonde) */
 function go(it,n,route){it.order=n;if(route&&route!=='s')it.route=route;return it;}
+/* stopt na hold px en rijdt in stap n2 verder */
+function hold(it,d,n2){it.hold=d;it.order2=n2;return it;}
 function tagAt(x,y,t){return I('tag',x,y,{text:t});}
 var PRESETS=[
   {id:'p1',label:'Rechte weg met twee richtingen',roadW:280,
@@ -98,6 +101,70 @@ var PRESETS=[
     return edgeLines(372,628).concat([I('f111',680,770),
       go(I('bike',560,470,{color:C.blue}),1),go(I('car',560,690,{color:C.red}),1),
       tagAt(612,470,'A'),tagAt(620,690,'B')]);
+  }},
+  {id:'p12',label:'Fietsstraat: fietser haalt de auto in',roadW:280,
+    q:{question:'Fietser D haalt auto C links in. C rijdt achter fietser A. Wat klopt?',answers:['D mag C inhalen, maar C mag fietser A niet inhalen en rijdt hoogstens 30 km/u','D mag C niet inhalen, want in een fietsstraat is inhalen verboden','C mag A inhalen als er geen tegenligger is','C moet aan de kant gaan zodat D kan passeren'],correct:0},
+    build:function(){
+    /* A en B vooraan, C blijft erachter op hetzelfde tempo; D rijdt sneller en haalt links in */
+    return edgeLines(372,628).concat([I('f111mark',500,215),
+      go(I('bike',532,450,{color:C.blue,pace:110}),1),go(I('brom',596,450,{color:C.orange,pace:110}),1),
+      go(I('car',564,620,{color:C.red,pace:110}),1),go(I('bike',564,770,{color:C.green}),1,'ml'),
+      tagAt(475,450,'A'),tagAt(660,450,'B'),tagAt(660,620,'C'),tagAt(660,770,'D')]);
+  }},
+  {id:'p13',label:'Woonerf',roadW:400,
+    q:{question:'Voetganger A loopt midden op de weg in dit woonerf. Wat klopt?',answers:['Dat mag: voetgangers mogen de hele breedte gebruiken en bestuurders rijden hoogstens 20 km/u','Dat mag niet: voetgangers moeten aan de kant lopen','Dat mag, maar bestuurders mogen 30 km/u rijden','Auto C heeft voorrang op voetganger A'],correct:0},
+    build:function(){
+    /* parkeervakken links en rechts, niet over de hele lengte; geparkeerde auto's rijden niet mee */
+    return edgeLines(312,688).concat([I('parkeer',354,250,{w:70,h:440}),I('parkeer',646,490,{w:70,h:440}),
+      I('car',354,250,{rot:180,color:C.white}),I('car',354,390,{rot:180,color:C.yellow}),I('car',646,490,{color:C.green}),
+      I('f12a',748,770),
+      go(I('ped',500,430,{color:C.orange}),1),go(I('bike',575,560,{color:C.blue,pace:100}),1),go(I('car',575,760,{color:C.red,pace:100}),1),
+      tagAt(440,430,'A'),tagAt(525,560,'B'),tagAt(520,760,'C')]);
+  }},
+  {id:'p14',label:'Voetgangerszone: laden en lossen',roadW:280,
+    q:{question:'Het is 9 uur. Auto A komt leveren en rijdt stapvoets. Motorfiets B rijdt gewoon door de zone. Wie is in overtreding?',answers:['Alleen B: A mag van 6 tot 12 uur laden en lossen','Alleen A: in een voetgangerszone mag nooit een auto','A en B allebei','Niemand: stapvoets rijden mag iedereen'],correct:0},
+    build:function(){
+    return edgeLines(372,628).concat([I('f103',705,770),
+      go(I('ped',520,520,{color:C.green}),1),go(I('ped',410,500,{color:C.yellow}),1),go(I('ped',520,300,{rot:180,color:C.blue}),1),
+      go(I('car',585,720,{color:C.red,pace:70}),1),go(I('motor',470,130,{rot:180,color:C.orange,pace:150}),1),
+      tagAt(650,720,'A'),tagAt(430,130,'B')]);
+  }},
+  {id:'p15',label:'Voorbehouden weg',roadW:240,
+    q:{question:'Wie mag deze voorbehouden weg (F99a) gebruiken?',answers:['Voetgangers, fietsers, ruiters en bestuurders van speed pedelecs','Iedereen, als hij stapvoets rijdt','Alleen voetgangers en fietsers','Ook auto\'s van bewoners'],correct:0},
+    build:function(){
+    return edgeLines(392,608).concat([I('f99a',650,770),
+      go(I('ruiter',555,580,{color:C.red}),1),go(I('bike',555,290,{color:C.blue,pace:120}),1),
+      go(I('ped',478,620,{color:C.green}),1),go(I('bike',425,110,{rot:180,color:C.orange,pace:120}),1)]);
+  }},
+  {id:'p16',label:'Weg met middenrijbaan',roadW:340,
+    q:{question:'Op deze weg met middenrijbaan rijdt fietser C rechts van de lijn. Wanneer mogen de auto\'s over de streep rijden?',answers:['Alleen om elkaar te kruisen; anders rijden ze in het midden','Altijd, want het zijn onderbroken lijnen','Nooit, ook niet om te kruisen','Alleen om de fietser in te halen'],correct:0},
+    build:function(){
+    /* A en B wijken uit om te kruisen; daarna rijdt A terug in het midden en haalt de fietser in */
+    return [I('dashed',420,430,{h:860}),I('dashed',580,430,{h:860}),
+      go(I('car',500,790,{color:C.red,pace:200}),1,'k'),go(I('car',500,450,{rot:180,color:C.blue,pace:200}),1,'k'),
+      go(I('bike',625,430,{color:C.green,pace:70}),1),
+      tagAt(440,790,'A'),tagAt(560,450,'B'),tagAt(680,430,'C')];
+  }},
+  {id:'p17',label:'Zebrapad: auto\'s stoppen voor de voetganger',roadW:280,
+    q:{question:'Voetganger C wil oversteken op het zebrapad. Wat doen de auto\'s A en B?',answers:['Stoppen voor het zebrapad en C laten oversteken','Doorrijden: wie al rijdt heeft voorrang','Claxonneren zodat C blijft wachten','Alleen vertragen en rond C rijden'],correct:0},
+    build:function(){
+    /* stap 1 de auto's stoppen, stap 2 de voetganger steekt over, stap 3 de auto's rijden verder */
+    return edgeLines(372,628).concat([I('dashed',500,615,{h:490}),I('dashed',500,145,{h:290}),I('zebra',500,330,{w:256,h:60}),
+      I('a21',680,745),I('f49',680,255),
+      hold(go(I('car',564,640,{color:C.red}),1),190,3),hold(go(I('car',564,780,{color:C.blue}),1),190,3),
+      go(I('ped',345,330,{rot:90,color:C.orange}),2),
+      tagAt(505,640,'A'),tagAt(505,780,'B'),tagAt(345,265,'C')]);
+  }},
+  {id:'p18',label:'Oversteekplaats fietsers: de fietser wacht',roadW:280,
+    q:{question:'Fietser C komt aan de oversteekplaats voor fietsers. Op de rijbaan naderen de auto\'s A en B. Wie gaat eerst?',answers:['A en B: C moet wachten','C: op een oversteekplaats heeft de fietser altijd voorrang','Wie het eerst aankomt','C, als hij zijn arm uitsteekt'],correct:0},
+    build:function(){
+    /* schuine oversteekplaats tussen twee stukken fietspad; stap 1 iedereen rijdt en de fietser stopt aan de rand, stap 2 de fietser steekt over */
+    return edgeLines(372,628).concat([I('dashed',500,615,{h:490}),I('dashed',500,145,{h:290}),
+      I('fietspad',149,532,{w:48,h:490,rot:60}),I('fietspad',851,128,{w:48,h:490,rot:60}),I('fietsoversteek',500,330,{rot:330,w:330,h:50}),
+      I('a25',680,745),I('f50',690,320),I('sharks',341,422,{rot:60,w:44}),I('yield',280,521,{rot:60,s:.6}),
+      go(I('car',564,620,{color:C.red}),1),go(I('car',564,770,{color:C.blue}),1),
+      hold(go(I('bike',128,545,{rot:60,color:C.green}),1),186,2),
+      tagAt(505,620,'A'),tagAt(505,770,'B'),tagAt(95,480,'C')]);
   }}
 ];
 /* ---------- voorbeeldsituaties (kruispunt) ---------- */
@@ -116,6 +183,13 @@ function sortLanes(signY){
     I('solid',500,735,{h:250}),I('dashed',620,746,{h:228}),I('dashed',740,746,{h:228}),
     I('arrow_l',560,730),I('arrow_s',680,730),I('arrow_r',800,730),
     I('lanesign',930,signY,{lanes:['l','s','r'],s:1.2})];
+}
+/* straat net voorbij het kruispunt afgesloten met een hek en bord; rechts blijft een opening voor fietser en voetganger */
+function gateStreet(sign){
+  return [I('barrier',455,285,{w:150}),I(sign,455,212),
+    go(I('bike',556,520,{color:C.blue}),1),go(I('ped',598,470,{color:C.green}),1),
+    go(I('car',560,660,{color:C.red}),2,'r'),go(I('car',560,800,{color:C.orange}),3,'l'),
+    tagAt(650,660,'A'),tagAt(650,800,'B'),tagAt(505,520,'C'),tagAt(650,470,'D')];
 }
 var XPRESETS=[
   {id:'c1',q:{question:'Wie mag als eerste doorrijden?',answers:['Auto A','Auto B','Auto C','Ze moeten allemaal wachten'],correct:2},label:'Kruispunt zonder borden: voorrang aan rechts',vw:240,hw:240,arm:null,build:function(){
@@ -175,7 +249,13 @@ var XPRESETS=[
       I('routepijl',605,560,{shape:3}),
       go(I('ped',650,345,{color:C.orange,rot:180}),1),go(I('bike',607,655,{color:C.blue}),1),
       go(carX('bottom',C.red),2,'r'),tagAt(560,810,'A')];
-  }}
+  }},
+  {id:'c10',label:'Speelstraat: hek net na het kruispunt',vw:240,hw:240,arm:null,
+    q:{question:'Wie mag voorbij het hek de speelstraat in?',answers:['Fietser C en voetganger D; de auto\'s A en B slaan links of rechts af','Iedereen, als hij stapvoets rijdt','Alleen voetganger D','Niemand: het hek sluit de straat'],correct:0},
+    build:function(){return gateStreet('speelstraat');}},
+  {id:'c11',label:'Schoolstraat: hek net na het kruispunt',vw:240,hw:240,arm:null,
+    q:{question:'Wie mag voorbij het hek de schoolstraat in?',answers:['Fietser C en voetganger D; de auto\'s A en B slaan links of rechts af','Iedereen, als hij stapvoets rijdt','Alleen voetganger D','Niemand: het hek sluit de straat'],correct:0},
+    build:function(){return gateStreet('schoolstraat');}}
 ];
 
 /* ---------- voorbeeldsituaties (rotonde) ----------
